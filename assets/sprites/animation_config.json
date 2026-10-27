@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "project": "Marvel Assemble",
+    "source": "sprite_sheet_transparent.png",
+    "status": "reference-crops-not-final-frames",
+    "recommended_canvas": [96, 96]
+  },
+  "animations": {
+    "idle": { "frames": 6, "fps": 8, "loop": true, "source": "idle.png" },
+    "walk": { "frames": 8, "fps": 10, "loop": true, "source": "walk.png" },
+    "run": { "frames": 8, "fps": 12, "loop": true, "source": "run.png" },
+    "jump": { "frames": 5, "fps": 10, "loop": false, "source": "jump.png" },
+    "flight": { "frames": 6, "fps": 10, "loop": true, "source": "flight.png" },
+    "repulsor_basic": { "frames": 5, "fps": 10, "loop": false, "source": "repulsor_basic.png" },
+    "dual_shot": { "frames": 4, "fps": 10, "loop": false, "source": "dual_shot.png" },
+    "charged_attack": { "frames": 3, "fps": 8, "loop": false, "source": "charged_attack.png" },
+    "unibeam": { "frames": 3, "fps": 8, "loop": false, "source": "unibeam.png" },
+    "missiles": { "frames": 4, "fps": 10, "loop": false, "source": "missiles.png" },
+    "air_attack": { "frames": 4, "fps": 10, "loop": false, "source": "air_attack.png" },
+    "energy_shield": { "frames": 4, "fps": 8, "loop": false, "source": "energy_shield.png" },
+    "power_pose": { "frames": 5, "fps": 8, "loop": true, "source": "power_pose.png" },
+    "damage": { "frames": 6, "fps": 10, "loop": false, "source": "damage.png" },
+    "defeated": { "frames": 6, "fps": 8, "loop": false, "source": "defeated.png" },
+    "get_up": { "frames": 6, "fps": 10, "loop": false, "source": "get_up.png" },
+    "slide": { "frames": 4, "fps": 12, "loop": false, "source": "slide.png" }
+  }
+}
