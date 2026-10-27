@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marvel Assemble — Prévia de movimento</title>
+<style>
+body{margin:0;background:#08101d;color:#edf5ff;font:16px system-ui;padding:16px}main{max-width:850px;margin:auto}h1{font-size:clamp(22px,4vw,32px)}canvas{width:100%;height:auto;background:#0d1b30;border:1px solid #4b678a;image-rendering:pixelated}button{padding:11px 14px;margin:3px;background:#18304f;color:#fff;border:1px solid #7294bd;border-radius:8px;font-weight:700}button[aria-pressed=true]{outline:2px solid #3bd4ff}p{color:#bdcee3;line-height:1.45}.note{border-left:3px solid #d9a64d;padding-left:10px;color:#eed3a1}
+</style></head><body><main>
+<h1>Prévia de movimento — Marvel Assemble</h1>
+<p>Esta ferramenta verifica o ritmo de animação que será usado no protótipo. A silhueta é provisória e desenhada por código: os sprites reais ainda precisam ser extraídos da folha manualmente para evitar cortes errados.</p>
+<canvas id="v" width="800" height="440"></canvas>
+<div><button data-m="idle" aria-pressed="true">Parado</button><button data-m="walk" aria-pressed="false">Andando</button><button data-m="run" aria-pressed="false">Correndo</button><button id="flip" aria-pressed="false">Virar direção</button></div>
+<p id="info">Parado · 8 FPS · loop</p><p class="note">Quando os PNGs finais forem preparados, substituiremos esta silhueta por spritesheets horizontais transparentes e alinhados. Esta página não modifica o jogo principal.</p>
+</main><script>
+(()=>{const c=document.getElementById('v'),x=c.getContext('2d'),info=document.getElementById('info');let mode='idle',flip=false,t=0,last=0;const cfg={idle:['Parado',8,true],walk:['Andando',10,true],run:['Correndo',12,true]};
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(q=>q.setAttribute('aria-pressed',String(q===b)));info.textContent=cfg[mode][0]+' · '+cfg[mode][1]+' FPS · '+(cfg[mode][2]?'loop':'uma execução')});
+document.getElementById('flip').onclick=e=>{flip=!flip;e.currentTarget.setAttribute('aria-pressed',String(flip));e.currentTarget.textContent=flip?'Virar direção ◀':'Virar direção ▶'};
+function limb(a,b,d,e,w,col){x.lineCap='round';x.strokeStyle='#09101c';x.lineWidth=w+4;x.beginPath();x.moveTo(a,b);x.lineTo(d,e);x.stroke();x.strokeStyle=col;x.lineWidth=w;x.beginPath();x.moveTo(a,b);x.lineTo(d,e);x.stroke()}
+function frame(){x.clearRect(0,0,800,440);let g=x.createLinearGradient(0,0,0,440);g.addColorStop(0,'#142c4b');g.addColorStop(1,'#070d17');x.fillStyle=g;x.fillRect(0,0,800,440);x.strokeStyle='#223b5c';for(let a=0;a<800;a+=40){x.beginPath();x.moveTo(a,0);x.lineTo(a,440);x.stroke()}for(let b=0;b<440;b+=40){x.beginPath();x.moveTo(0,b);x.lineTo(800,b);x.stroke()}x.fillStyle='#273b53';x.fillRect(0,350,800,90);x.fillStyle='#6f8cae';x.fillRect(0,350,800,3);
+let ph=t*cfg[mode][1],step=mode==='idle'?0:Math.sin(ph)*(mode==='run'?17:10),bob=mode==='idle'?Math.sin(t*2)*1.5:Math.abs(Math.sin(ph))*2,cx=400,base=350-bob,s=flip?-1:1;
+x.save();x.translate(cx,0);x.scale(s,1);x.translate(-cx,0);
+limb(cx-9,base-60,cx-12+step*.5,base-27,13,'#dbe5f2');limb(cx-12+step*.5,base-27,cx-19+step,base-6,10,'#f4f7fb');limb(cx+9,base-60,cx+12-step*.5,base-27,13,'#dbe5f2');limb(cx+12-step*.5,base-27,cx+19-step,base-6,10,'#f4f7fb');
+x.fillStyle='#eef3fa';x.strokeStyle='#07101c';x.lineWidth=4;x.beginPath();x.roundRect(cx-20,base-114,40,57,9);x.fill();x.stroke();x.fillStyle='#aabbd1';x.fillRect(cx-14,base-105,28,30);x.fillStyle='#42d9ff';x.fillRect(cx-6,base-93,12,12);
+let arm=mode==='idle'?0:step*.5;limb(cx-17,base-106,cx-27+arm,base-78,9,'#e6edf7');limb(cx-27+arm,base-78,cx-25+arm,base-59,8,'#f7f9fd');limb(cx+17,base-106,cx+27-arm,base-78,9,'#e6edf7');limb(cx+27-arm,base-78,cx+25-arm,base-59,8,'#f7f9fd');
+x.fillStyle='#eaf1f9';x.beginPath();x.arc(cx,base-133,17,0,Math.PI*2);x.fill();x.stroke();x.fillStyle='#45d8ff';x.fillRect(cx-9,base-138,18,4);x.restore();
+x.fillStyle='#8fa8c6';x.font='bold 14px monospace';x.fillText('MARVEL ASSEMBLE · MOTION TEST',18,26);x.fillStyle='#d8e7f8';x.font='13px system-ui';x.fillText(cfg[mode][0].toUpperCase(),18,48);requestAnimationFrame(loop)}
+function loop(now){if(!last)last=now;t+=Math.min(.05,(now-last)/1000);last=now;frame()}requestAnimationFrame(loop)
+})();
+</script></body></html>
