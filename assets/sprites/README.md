@@ -25,7 +25,7 @@ Os recortes são regiões retangulares da folha, não sprites individuais perfei
 | get_up | 6 | 10 | não |
 | slide | 4 | 12 | não |
 
-Esses números são parâmetros iniciais para implementação, não uma indicação de que os quadros já estejam separados. Para exportação final, cada frame deve ser cortado manualmente, alinhado numa caixa consistente (sugestão: 96×96 px) e descrito num JSON com `frameWidth`, `frameHeight`, `frames`, `fps` e `loop`.
+Esses números são parâmetros iniciais para implementação, não uma indicação de que os quadros já estejam separados. Para exportação final, cada frame deve ser cortado manualmente, alinhado numa caixa consistente (sugestão: 96×96 px) e descrito num JSON com `frameWidth`, `frameHeight`, `frames`, `fps` e `loop`. A configuração inicial está em `animation_config.json`.
 
 ## Categorias disponíveis
 
