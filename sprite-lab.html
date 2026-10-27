@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Marvel Assemble — Sprite Lab</title>
+<style>
+:root{color-scheme:dark;--line:#314766;--panel:#0b1425;--accent:#38c5ff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050a14;color:#eaf3ff;font-family:system-ui,Arial,sans-serif}
+body{padding:14px}main{max-width:1050px;margin:auto}h1{font-size:clamp(22px,4vw,34px);margin:4px 0}p{line-height:1.45;color:#b8c8dc}.sub{font-size:13px}
+.panel{border:1px solid var(--line);background:linear-gradient(135deg,#111f36,#080f1e);border-radius:12px;padding:12px;margin:12px 0}
+canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#080d18;border:1px solid #3d5778;border-radius:8px;image-rendering:pixelated}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.row>*{flex:1}
+button,select{background:#172945;color:white;border:1px solid #4b668c;border-radius:8px;padding:12px 14px;font:700 14px system-ui;min-height:44px}
+button:active{background:#275180}button[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+small{color:#95a9c5}.tag{display:inline-block;border:1px solid #426288;border-radius:99px;padding:4px 8px;font-size:12px;color:#a8dfff}
+.status{font-weight:700;color:#8bdcff}.notice{border-left:3px solid #e2aa4b;padding-left:10px;color:#f4d9a2}
+@media(max-width:500px){body{padding:8px}.panel{padding:9px}.row button{padding:10px 8px}}
+</style>
+</head>
+<body><main>
+<span class="tag">MARVEL ASSEMBLE · FERRAMENTA DE DESENVOLVIMENTO</span>
+<h1>Laboratório de animação</h1>
+<p>Teste inicial de movimento no celular. Esta página usa um boneco temporário desenhado em Canvas; ainda não representa os sprites finais da sua folha.</p>
+<section class="panel">
+<canvas id="stage" width="960" height="540" aria-label="Área de pré-visualização do personagem"></canvas>
+<div class="row" style="margin-top:10px">
+<button data-mode="idle" aria-pressed="true">Parado</button><button data-mode="walk" aria-pressed="false">Andando</button><button data-mode="run" aria-pressed="false">Correndo</button>
+</div>
+<div class="row" style="margin-top:8px">
+<button id="left" aria-label="Mover para esquerda">◀ Esquerda</button><button id="right" aria-label="Mover para direita">Direita ▶</button><button id="reset">Centralizar</button>
+</div>
+<p class="sub">Estado: <span id="state" class="status">Parado</span> · Velocidade de animação: <span id="fps">8</span> quadros/s</p>
+</section>
+<section class="panel">
+<h2 style="font-size:18px;margin:4px 0 8px">Preparação dos sprites</h2>
+<p class="notice">Os recortes atuais são apenas regiões de referência; não são uma sequência limpa de frames. O visualizador usa um boneco provisório para validar o movimento antes de ligar os arquivos reais.</p>
+<p class="sub">Para substituir o boneco por arte final, exporte cada sequência com fundo transparente e frames alinhados em caixas iguais. O utilitário <code>assets/sprites/sprite-player.js</code> espera uma spritesheet horizontal de quadros uniformes.</p>
+</section>
+<section class="panel">
+<h2 style="font-size:18px;margin:4px 0 8px">Controles</h2>
+<p class="sub">Toque nos botões direcionais ou use as teclas A/D ou ←/→. A página adapta o movimento ao ritmo de caminhada ou corrida selecionado.</p>
+<div class="row"><button id="toggle-grid" aria-pressed="true">Grade: ligada</button><button id="toggle-trail" aria-pressed="true">Rastro: ligado</button></div>
+</section>
+<p><small>Marvel Assemble · protótipo técnico · feito para tela pequena.</small></p>
+</main>
+<script>
+(()=>{
+const c=document.getElementById('stage'),ctx=c.getContext('2d'),stateEl=document.getElementById('state'),fpsEl=document.getElementById('fps');
+let mode='idle',x=480,dir=1,held=0,grid=true,trail=true,last=0,time=0;
+const configs={idle:{label:'Parado',fps:8,speed:0},walk:{label:'Andando',fps:10,speed:105},run:{label:'Correndo',fps:12,speed:210}};
+function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===m)));stateEl.textContent=configs[m].label;fpsEl.textContent=configs[m].fps}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+function bg(){
+ const g=ctx.createLinearGradient(0,0,0,540);g.addColorStop(0,'#0a1426');g.addColorStop(1,'#101b2b');ctx.fillStyle=g;ctx.fillRect(0,0,960,540);
+ if(grid){ctx.strokeStyle='#20304a';ctx.lineWidth=1;for(let gx=0;gx<960;gx+=48){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,540);ctx.stroke()}for(let gy=30;gy<540;gy+=48){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(960,gy);ctx.stroke()}}
+ ctx.fillStyle='#263853';ctx.fillRect(0,445,960,95);ctx.fillStyle='#4e6d8b';ctx.fillRect(0,445,960,4);
+ for(let i=0;i<960;i+=64){ctx.fillStyle='#354b66';ctx.fillRect(i,470,32,3)}
+}
+function limb(x1,y1,x2,y2,w,color='#e7edf5'){ctx.strokeStyle='#111b2b';ctx.lineWidth=w+5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function hero(){
+ const phase=time*configs[mode].fps/8,step=mode==='idle'?0:Math.sin(phase)* (mode==='run'?24:14),bob=mode==='idle'?Math.sin(time*2)*2:Math.abs(Math.sin(phase))*3;
+ const cx=x,base=444-bob,sign=dir;
+ if(trail&&mode!=='idle'){ctx.fillStyle=mode==='run'?'#f59e0b55':'#38bdf855';ctx.fillRect(cx-sign*30,base-5,sign*-1*26,3)}
+ // legs and boots: simple temporary mannequin
+ limb(cx-8,base-54,cx-12+step*0.6,base-21,11);limb(cx-12+step*0.6,base-21,cx-18+step,base-6,9,'#dce5ef');
+ limb(cx+8,base-54,cx+12-step*0.6,base-21,11);limb(cx+12-step*0.6,base-21,cx+18-step,base-6,9,'#dce5ef');
+ ctx.fillStyle='#f3f6fa';ctx.strokeStyle='#101a29';ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(cx-18,base-102,36,52,10);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#cdd8e6';ctx.fillRect(cx-14,base-95,28,28);ctx.fillStyle='#38c5ff';ctx.fillRect(cx-5,base-84,10,10);
+ // arms
+ const arm=mode==='idle'?0:step*.55;
+ limb(cx-15,base-94,cx-25+arm,base-65,8);limb(cx-25+arm,base-65,cx-24+arm,base-48,7);
+ limb(cx+15,base-94,cx+25-arm,base-65,8);limb(cx+25-arm,base-65,cx+24-arm,base-48,7);
+ ctx.fillStyle='#f5f7fb';ctx.strokeStyle='#101a29';ctx.lineWidth=5;ctx.beginPath();ctx.arc(cx,base-119,16,0,Math.PI*2);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#9aaabe';ctx.fillRect(cx-10,base-125,20,5);
+ // eyeslit
+ ctx.fillStyle='#38c5ff';ctx.fillRect(cx-7,base-121,14,3);
+}
+function draw(t){if(!last)last=t;const dt=Math.min(.05,(t-last)/1000);last=t;time+=dt;if(held){x+=held*configs[mode].speed*dt;dir=held;x=Math.max(60,Math.min(900,x))}bg();hero();ctx.fillStyle='#dbeafe';ctx.font='bold 18px system-ui';ctx.fillText('SPRITE LAB / '+configs[mode].label.toUpperCase(),22,34);ctx.font='13px system-ui';ctx.fillStyle='#8da4c5';ctx.fillText('BONECO TEMPORÁRIO — NÃO É O ASSET FINAL',22,55);requestAnimationFrame(draw)}
+requestAnimationFrame(draw);
+function press(id,val){const el=document.getElementById(id);const down=e=>{e.preventDefault();held=val;dir=val; if(mode==='idle')setMode('walk')};const up=e=>{e.preventDefault();held=0};el.addEventListener('pointerdown',down);['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,up))}
+press('left',-1);press('right',1);
+document.getElementById('reset').addEventListener('click',()=>{x=480;held=0;setMode('idle')});
+document.getElementById('toggle-grid').addEventListener('click',e=>{grid=!grid;e.currentTarget.setAttribute('aria-pressed',String(grid));e.currentTarget.textContent='Grade: '+(grid?'ligada':'desligada')});
+document.getElementById('toggle-trail').addEventListener('click',e=>{trail=!trail;e.currentTarget.setAttribute('aria-pressed',String(trail));e.currentTarget.textContent='Rastro: '+(trail?'ligado':'desligado')});
+window.addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key)){held=-1;dir=-1;if(mode==='idle')setMode('walk')}if(['ArrowRight','d','D'].includes(e.key)){held=1;dir=1;if(mode==='idle')setMode('walk')}if(e.key==='Shift')setMode('run')});
+window.addEventListener('keyup',e=>{if(['ArrowLeft','ArrowRight','a','A','d','D'].includes(e.key))held=0;if(e.key==='Shift')setMode('walk')});
+})();
+</script>
+</body></html>
