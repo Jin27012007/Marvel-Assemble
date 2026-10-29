@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marvel Assemble — Oficina de Sprites</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif;background:#080d1c;color:#eff5ff}
+*{box-sizing:border-box}body{margin:0;padding:18px;max-width:900px;margin-inline:auto}
+h1{margin:0 0 8px;font-size:clamp(24px,5vw,36px)}p{line-height:1.5;color:#c7d8ed}
+.panel{border:1px solid #6889b4;background:#101b30;padding:14px;margin:14px 0;border-radius:8px}
+label{display:block;font-weight:700;margin:10px 0 5px}
+input,button{font:inherit}input[type=text],input[type=number],input[type=file]{max-width:100%;padding:9px;background:#07101e;border:1px solid #607da0;color:#eff5ff;border-radius:5px;width:100%}
+button{border:1px solid #80bee9;background:#087bb7;color:#fff;padding:10px 14px;border-radius:5px;font-weight:800;cursor:pointer;margin:8px 8px 0 0}
+button:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.preview{background:#080d1b;border:1px dashed #6889b4;min-height:150px;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
+canvas{image-rendering:pixelated;max-width:100%;height:auto;background-color:#0e1930;background-image:linear-gradient(45deg,#17243b 25%,transparent 25%),linear-gradient(-45deg,#17243b 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#17243b 75%),linear-gradient(-45deg,transparent 75%,#17243b 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0}
+.status{font-size:13px;color:#b9d4ee;min-height:18px}.ok{color:#73e59b}.warn{color:#ffd27a}
+small{color:#a9c3e2}.actions{display:flex;flex-wrap:wrap;gap:6px}
+</style>
+</head>
+<body>
+<h1>Oficina de Sprites</h1>
+<p>Prepare arquivos de personagens sem editar o jogo. Esta ferramenta roda no navegador: selecione os PNGs, confira a prévia e baixe as versões padronizadas. Ela não envia seus arquivos para um servidor.</p>
+<div class="panel">
+<label for="charId">ID da pasta do personagem</label>
+<input id="charId" type="text" value="novo-personagem" pattern="[a-z0-9-]+" autocomplete="off">
+<small>Use minúsculas, números e hífen; sem espaços ou acentos.</small>
+<div class="grid">
+<div><label for="idleInput">Pose parada (PNG)</label><input id="idleInput" type="file" accept="image/png"></div>
+<div><label for="walkInput">Folha de caminhada (PNG)</label><input id="walkInput" type="file" accept="image/png"><small>Quadros horizontais de mesma largura. Padrão: 4.</small></div>
+<div><label for="portraitInput">Retrato (PNG)</label><input id="portraitInput" type="file" accept="image/png"></div>
+</div>
+<label for="frameCount">Quantidade de quadros na caminhada</label>
+<input id="frameCount" type="number" min="1" max="16" step="1" value="4">
+<label for="portraitScale">Tamanho do desenho no retrato (percentual da caixa 128×128)</label>
+<input id="portraitScale" type="number" min="40" max="100" step="1" value="76">
+<button id="process">Preparar e conferir</button>
+<div id="status" class="status">Selecione os arquivos para começar.</div>
+</div>
+<div class="grid">
+<div class="panel"><h2>Idle padronizado · 90×90</h2><div class="preview"><canvas id="idlePreview" width="90" height="90"></canvas></div><div id="idleInfo" class="status">Sem arquivo</div><button id="downloadIdle" disabled>Baixar idle.png</button></div>
+<div class="panel"><h2>Caminhada · 4 quadros de 90×90</h2><div class="preview"><canvas id="walkPreview" width="360" height="90"></canvas></div><div id="walkInfo" class="status">Sem arquivo</div><button id="downloadWalk" disabled>Baixar walk-4frames.png</button></div>
+<div class="panel"><h2>Retrato padronizado · 128×128</h2><div class="preview"><canvas id="portraitPreview" width="128" height="128"></canvas></div><div id="portraitInfo" class="status">Sem arquivo</div><button id="downloadPortrait" disabled>Baixar portrait.png</button></div>
+</div>
+<div class="panel">
+<h2>Destinos no repositório</h2>
+<p>Crie a pasta <code>assets/sprites/ID/</code> e coloque dentro os três arquivos baixados:</p>
+<p><code>assets/sprites/ID/idle.png</code><br><code>assets/sprites/ID/walk-4frames.png</code><br><code>assets/sprites/ID/portrait.png</code></p>
+<p>O padrão normalizado deixa todos os quadros do corpo em 90×90 px, com fundo transparente. O retrato fica em 128×128 px e o desenho é centralizado com margem transparente ajustável. Mantenha a mesma margem e o mesmo alinhamento entre personagens.</p>
+<p class="warn"><b>Limite atual do jogo:</b> o protótipo ainda carrega o Homem de Ferro diretamente no código. Esta oficina padroniza os assets sem alterar o combate, mas tornar um novo personagem selecionável sem editar código exigirá uma futura etapa de catálogo/carregador.</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const state={idle:null,walk:null,portrait:null};
+function loadImage(file){return new Promise((resolve,reject)=>{if(!file){reject(new Error("Selecione o arquivo PNG."));return;}const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Não foi possível ler esta imagem."))};img.src=url;});}
+function contain(ctx,img,x,y,w,h){const scale=Math.min(w/img.naturalWidth,h/img.naturalHeight);const dw=Math.max(1,Math.round(img.naturalWidth*scale)),dh=Math.max(1,Math.round(img.naturalHeight*scale));ctx.drawImage(img,Math.round(x+(w-dw)/2),Math.round(y+(h-dh)/2),dw,dh);}
+function drawFrame(ctx,img,sx,sw){ctx.clearRect(0,0,90,90);ctx.imageSmoothingEnabled=false;const temp=document.createElement("canvas");temp.width=sw;temp.height=img.naturalHeight;temp.getContext("2d").drawImage(img,sx,0,sw,img.naturalHeight,0,0,sw,img.naturalHeight);const frame=new Image();return new Promise((resolve,reject)=>{frame.onload=()=>{contain(ctx,frame,0,0,90,90);resolve()};frame.onerror=reject;frame.src=temp.toDataURL("image/png")});}
+function setStatus(msg,kind=""){ $("status").textContent=msg;$("status").className="status "+kind; }
+function download(canvas,name){const a=document.createElement("a");a.download=name;a.href=canvas.toDataURL("image/png");a.click();}
+$("process").addEventListener("click",async()=>{
+ try{
+  const id=$("charId").value.trim();
+  if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))throw new Error("ID inválido. Use apenas minúsculas, números e hífen.");
+  const count=Number($("frameCount").value),scale=Number($("portraitScale").value);
+  if(!Number.isInteger(count)||count<1||count>16)throw new Error("A caminhada precisa ter de 1 a 16 quadros.");
+  if(!Number.isFinite(scale)||scale<40||scale>100)throw new Error("A escala do retrato deve ficar entre 40% e 100%.");
+  const idle=await loadImage($("idleInput").files[0]);
+  const walk=await loadImage($("walkInput").files[0]);
+  const portrait=await loadImage($("portraitInput").files[0]);
+  if(walk.naturalWidth%count!==0)throw new Error("A largura da folha de caminhada precisa ser divisível pela quantidade de quadros.");
+  const frameW=walk.naturalWidth/count;
+  const ic=$("idlePreview").getContext("2d");ic.clearRect(0,0,90,90);ic.imageSmoothingEnabled=false;contain(ic,idle,0,0,90,90);
+  const wc=$("walkPreview");wc.width=count*90;wc.height=90;const wctx=wc.getContext("2d");wctx.clearRect(0,0,wc.width,wc.height);wctx.imageSmoothingEnabled=false;
+  for(let i=0;i<count;i++){const temp=document.createElement("canvas");temp.width=frameW;temp.height=walk.naturalHeight;temp.getContext("2d").drawImage(walk,i*frameW,0,frameW,walk.naturalHeight,0,0,frameW,walk.naturalHeight);const frame=await loadImageFromCanvas(temp);contain(wctx,frame,i*90,0,90,90);}
+  const pc=$("portraitPreview"),pctx=pc.getContext("2d");pctx.clearRect(0,0,128,128);pctx.imageSmoothingEnabled=false;const box=128*scale/100;contain(pctx,portrait,(128-box)/2,(128-box)/2,box,box);
+  state.idle=$("idlePreview");state.walk=$("walkPreview");state.portrait=pc;
+  $("idleInfo").textContent=idle.naturalWidth+"×"+idle.naturalHeight+" → 90×90";$("walkInfo").textContent=walk.naturalWidth+"×"+walk.naturalHeight+" → "+count+" quadros de 90×90";$("portraitInfo").textContent=portrait.naturalWidth+"×"+portrait.naturalHeight+" → 128×128 com desenho a "+scale+"%";
+  ["downloadIdle","downloadWalk","downloadPortrait"].forEach(id=>$ (id).disabled=false);
+  $("downloadIdle").onclick=()=>download(state.idle,"idle.png");$("downloadWalk").onclick=()=>download(state.walk,"walk-4frames.png");$("downloadPortrait").onclick=()=>download(state.portrait,"portrait.png");
+  $("walkPreview").style.maxWidth="100%";setStatus("Sprites preparados. Confira se nenhum quadro perdeu partes do personagem antes de baixar.","ok");
+ }catch(err){setStatus(err.message||"Falha ao preparar as imagens.","warn");}
+});
+function loadImageFromCanvas(canvas){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=canvas.toDataURL("image/png");});}
+</script>
+</body>
+</html>
