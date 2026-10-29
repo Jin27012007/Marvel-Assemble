@@ -33,9 +33,9 @@ function drawIron(x,y){
       if(moving){
         walkClock+=1/60;
         if(walkClock>=0.12){walkClock=0;walkFrame=(walkFrame+1)%4;}
-        sourceW=Math.floor((sprite.naturalWidth||sprite.width)/5);
+        sourceW=Math.floor((sprite.naturalWidth||sprite.width)/4);
         sourceH=sprite.naturalHeight||sprite.height;
-        sourceX=(walkFrame+1)*sourceW;
+        sourceX=walkFrame*sourceW;
       }else{walkFrame=0;walkClock=0;}
       const targetH=player.h;
       const targetW=targetH*(sourceW/sourceH);
