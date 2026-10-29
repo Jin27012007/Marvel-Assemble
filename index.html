@@ -72,7 +72,7 @@ const catalog=[
  {id:'ironman',name:'IRON MAN',subtitle:'PERSONAGEM DISPONÍVEL',portrait:'assets/sprites/ironman/portrait.png?v=10',idle:'assets/sprites/ironman/idle.png',walk:'assets/sprites/ironman/walk-4frames.png',maxHp:1500,maxEn:200,visual:'sprite',available:true},
  {id:'generic',name:'MODELO GENÉRICO',subtitle:'MODELO BASE · TESTE',portrait:null,idle:null,walk:null,maxHp:1200,maxEn:180,visual:'generic',available:true}
 ];
-let selectedCharacter=catalog[0],gameMode='menu',controlsVisible=true;
+let selectedCharacter=catalog[0],gameMode='menu',pendingMode='play',controlsVisible=true,trainingPanelOpen=false;
 function makeGenericFrame(frame=0){
  const cv=document.createElement('canvas');cv.width=90;cv.height=90;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
  const px=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
@@ -106,6 +106,9 @@ function loadCharacter(character){
 }
 function renderCatalog(){
  const grid=document.getElementById('characterGrid');grid.innerHTML='';
+ document.getElementById('characterSelectSubtitle').textContent=pendingMode==='training'?'ESCOLHA UM PERSONAGEM PARA TREINAR':'ESCOLHA UM PERSONAGEM PARA JOGAR';
+ document.getElementById('confirmCharacter').textContent=pendingMode==='training'?'INICIAR TREINO':'CONTINUAR';
+ document.getElementById('confirmCharacter').disabled=false;
  catalog.forEach(ch=>{
   const card=document.createElement('button');card.className='characterCard'+(selectedCharacter.id===ch.id?' selected':'');
   const icon=document.createElement('span');icon.className='characterIcon';
@@ -113,25 +116,37 @@ function renderCatalog(){
   else icon.textContent='◇';
   const title=document.createElement('strong');title.textContent=ch.name;
   const sub=document.createElement('small');sub.textContent=ch.subtitle;
-  card.append(icon,title,sub);card.onclick=()=>{selectedCharacter=ch;renderCatalog();document.getElementById('confirmCharacter').disabled=false};
+  card.append(icon,title,sub);card.onclick=()=>{selectedCharacter=ch;renderCatalog()};
   grid.appendChild(card);
  });
+}
+function setTrainingPanel(open){
+ trainingPanelOpen=Boolean(open);
+ const panel=document.getElementById('training');
+ const toggle=document.getElementById('trainingPanelToggle');
+ panel.style.display=gameMode==='training'&&trainingPanelOpen?'block':'none';
+ toggle.style.display=gameMode==='training'&&!trainingPanelOpen?'block':'none';
+ toggle.setAttribute('aria-expanded',String(trainingPanelOpen));
 }
 function startGame(mode){
  gameMode=mode;loadCharacter(selectedCharacter);
  document.getElementById('start').style.display='none';document.getElementById('characterSelect').style.display='none';document.getElementById('settingsScreen').style.display='none';
- document.getElementById('training').style.display=mode==='training'?'block':'none';
  document.getElementById('controls').style.display=controlsVisible?'flex':'none';
+ document.getElementById('trainingPanelToggle').style.display='none';
+ setTrainingPanel(false);
+ document.getElementById('trainingPanelToggle').style.display=mode==='training'?'block':'none';
  spawnOn=true;const spawnButton=document.getElementById('spawn');spawnButton.textContent=spawnOn?'ON':'OFF';spawnButton.classList.toggle('active',spawnOn);
  document.getElementById('level').textContent='NÍVEL 1 · '+(mode==='training'?'TREINO':'PARTIDA');
  say(mode==='training'?'Treino iniciado':'Partida iniciada');
 }
-document.getElementById('menuPlay').onclick=()=>{renderCatalog();document.getElementById('start').style.display='none';document.getElementById('characterSelect').style.display='flex'};
-document.getElementById('menuTraining').onclick=()=>startGame('training');
+document.getElementById('menuPlay').onclick=()=>{pendingMode='play';renderCatalog();document.getElementById('start').style.display='none';document.getElementById('characterSelect').style.display='flex'};
+document.getElementById('menuTraining').onclick=()=>{pendingMode='training';renderCatalog();document.getElementById('start').style.display='none';document.getElementById('characterSelect').style.display='flex'};
 document.getElementById('menuSettings').onclick=()=>{document.getElementById('start').style.display='none';document.getElementById('settingsScreen').style.display='flex'};
 document.getElementById('backToMenu').onclick=()=>{document.getElementById('characterSelect').style.display='none';document.getElementById('start').style.display='flex'};
 document.getElementById('settingsBack').onclick=()=>{document.getElementById('settingsScreen').style.display='none';document.getElementById('start').style.display='flex'};
-document.getElementById('confirmCharacter').onclick=()=>startGame('play');
+document.getElementById('confirmCharacter').onclick=()=>startGame(pendingMode);
+document.getElementById('trainingPanelToggle').onclick=()=>setTrainingPanel(true);
+document.getElementById('trainingPanelClose').onclick=()=>setTrainingPanel(false);
 document.getElementById('settingControls').onclick=()=>{controlsVisible=!controlsVisible;const b=document.getElementById('settingControls');b.textContent=controlsVisible?'VISÍVEIS':'OCULTOS';b.classList.toggle('active',controlsVisible);document.getElementById('controls').style.display=controlsVisible&&gameMode!=='menu'?'flex':'none'};
 document.getElementById('settingFullscreen').onclick=async()=>{try{if(!document.fullscreenElement&&document.documentElement.requestFullscreen){await document.documentElement.requestFullscreen();document.getElementById('settingFullscreen').textContent='ATIVADA'}else if(document.exitFullscreen){await document.exitFullscreen();document.getElementById('settingFullscreen').textContent='ATIVAR'}}catch(e){say('Tela cheia não disponível neste navegador')}};
 document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('selectstart',e=>e.preventDefault());document.addEventListener('dragstart',e=>e.preventDefault());document.querySelectorAll('button').forEach(b=>{b.addEventListener('contextmenu',e=>e.preventDefault());b.addEventListener('selectstart',e=>e.preventDefault())});const heldPointers=new Map();function clearHeldPointer(id){const k=heldPointers.get(id);if(k){if(k.startsWith('depth:'))depthKeys[k.slice(6)]=false;else keys[k]=false;heldPointers.delete(id)}}document.querySelectorAll('[data-key]').forEach(b=>{const k=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();keys[k]=true;heldPointers.set(e.pointerId,k);try{b.setPointerCapture(e.pointerId)}catch(_){}});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,e=>{e.preventDefault();clearHeldPointer(e.pointerId)}))});document.querySelectorAll('[data-depth]').forEach(b=>{const k=b.dataset.depth;b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();depthKeys[k]=true;heldPointers.set(e.pointerId,'depth:'+k);try{b.setPointerCapture(e.pointerId)}catch(_){}});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,e=>{e.preventDefault();clearHeldPointer(e.pointerId)}))});window.addEventListener('pointerup',e=>clearHeldPointer(e.pointerId));window.addEventListener('pointercancel',e=>clearHeldPointer(e.pointerId));window.addEventListener('blur',()=>{for(const id of [...heldPointers.keys()])clearHeldPointer(id);for(const k of Object.keys(keys))keys[k]=false;depthKeys.up=depthKeys.down=false});window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});window.addEventListener('keyup',e=>keys[e.code]=false);
