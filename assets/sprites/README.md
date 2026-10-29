@@ -1,39 +1,28 @@
-# Personagens e sprites do Marvel Assemble
+# Personagens e sprites — Marvel Assemble
 
-Este diretório contém os recursos visuais do jogo. Para evitar retrabalho com novos personagens, siga o padrão abaixo. O protótipo atual ainda carrega Iron Man diretamente pelo código; catálogo automático será uma etapa futura.
+**Comece pela [Oficina de Sprites](./sprite-workbench.html)**. Ela funciona no navegador e prepara os PNGs com dimensões consistentes para você baixar e enviar ao GitHub.
 
-## Estrutura por personagem
+## Estrutura obrigatória
 
 ```text
-assets/sprites/
-  ironman/
-    idle.png
-    walk-4frames.png
-    portrait.png
-  spiderman/
-    idle.png
-    walk-4frames.png
-    portrait.png
+assets/sprites/<id>/
+  idle.png
+  walk-4frames.png
+  portrait.png
 ```
 
-Cada personagem deve ter sua própria pasta com um ID em minúsculas, sem espaços nem acentos.
+IDs simples em minúsculas: `ironman`, `spiderman`, `hulk`. Não use espaços nem acentos.
 
-## Dimensões e alinhamento
+## Formatos finais
 
-- **Idle:** PNG com fundo transparente, personagem inteiro.
-- **Walk:** uma folha horizontal de 4 quadros de tamanho idêntico. Cada quadro deve conter o personagem inteiro, não pode tocar nas bordas e deve alinhar os pés e o centro do corpo com os outros quadros.
-- **Retrato:** PNG quadrado de 128×128 px, com fundo transparente. Deixe aproximadamente 16–20 px de margem transparente em cada lado; centralize o rosto. Não faça o desenho encostar nas bordas. O perfil do jogo controla o tamanho de exibição.
-- **Personagem padrão:** mantenha a caixa de origem e a escala visual consistentes com Iron Man. Atualmente o jogo desenha o corpo a 76 unidades lógicas de altura e calcula a largura a partir da proporção da imagem. Não altere a hitbox para acomodar uma imagem maior.
-- Personagens deliberadamente grandes, como Hulk, deverão receber escala visual individual em um futuro catálogo de personagens, sem mudar a escala dos demais.
+| Arquivo | Tamanho | Conteúdo |
+|---|---:|---|
+| `idle.png` | 90×90 px | Pose parada em um único quadro transparente |
+| `walk-4frames.png` | 360×90 px | Quatro quadros horizontais de 90×90 px |
+| `portrait.png` | 128×128 px | Retrato centralizado com margem transparente |
 
-## Regras para evitar problemas
+A oficina aplica a mesma escala à pose parada e a todos os quadros de caminhada, alinha os pés e retira margens transparentes variáveis para que os personagens mantenham tamanho consistente. O retrato recebe margem transparente e pode ser aumentado ou reduzido sem cortar as bordas.
 
-1. Use PNG verdadeiro com canal alfa (transparência). Não use uma captura de tela nem um arquivo Base64 salvo como texto.
-2. Mantenha nomes exatos: `idle.png`, `walk-4frames.png`, `portrait.png`.
-3. Ao substituir um sprite, preserve o tamanho dos quadros e o alinhamento; nesse caso não deve ser necessário editar `index.html`.
-4. Ao remover um personagem, procure todas as referências ao seu ID e apague apenas a pasta dele depois de conferir se não há dependências.
-5. Ao adicionar vários personagens, atualize o futuro catálogo central, em vez de espalhar caminhos de imagem pelo jogo.
+Para instruções completas, consulte o [guia de fluxo de sprites](../../docs/SPRITE_PIPELINE.md).
 
-## Estado atual
-
-O jogo ainda carrega apenas os sprites de Iron Man diretamente em `index.html`. Este documento é um padrão de preparação dos arquivos, não um sistema automático de importação. A seleção genérica por personagem ainda precisará ser implementada separadamente.
+**Limite atual:** o jogo ainda carrega Iron Man diretamente no código. A oficina facilita preparar/substituir os assets sem alterar a jogabilidade, mas a adição automática de personagens sem mexer no código exige futuramente um catálogo/carregador genérico.
