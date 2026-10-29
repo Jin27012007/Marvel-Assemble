@@ -31,7 +31,17 @@ function drawIron(x,y){
       const dx=x+(player.w-dw)/2, dy=y+player.h-dh;
       ctx.drawImage(idleSprite,dx,dy,dw,dh);return;
     }
-    if(walkLoaded){
+    if(walkLoaded && Math.abs(player.vx)>24 && player.onGround){
+      walkClock+=1/60;
+      if(walkClock>=0.12){walkClock=0;walkFrame=(walkFrame+1)%4;}
+      const fw=360,fh=360,dw=fw*0.22,dh=fh*0.22;
+      const dx=x+(player.w-dw)/2,dy=y+player.h-dh;
+      ctx.save();
+      if(player.face<0){ctx.translate(dx+dw,0);ctx.scale(-1,1);ctx.drawImage(walkSheet,walkFrame*fw,0,fw,fh,0,dy,dw,dh);}
+      else ctx.drawImage(walkSheet,walkFrame*fw,0,fw,fh,dx,dy,dw,dh);
+      ctx.restore();return;
+    }
+    
       if(Math.abs(player.vx)>24 && player.onGround){
         walkClock+=1/60;
         if(walkClock>=0.12){walkClock=0;walkFrame=(walkFrame+1)%4;}
