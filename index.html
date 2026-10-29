@@ -41,6 +41,7 @@ html,body{touch-action:auto}
 .menuWheelShell{width:min(720px,100%);margin:0 auto}
 .menuWheel{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#4d8db7 #0a1425;padding:8px 3px 14px;touch-action:pan-x;cursor:grab}
 .menuWheel:active{cursor:grabbing}
+.menuWheel .wheelItem{touch-action:pan-x}
 .menuWheel::-webkit-scrollbar{height:7px}.menuWheel::-webkit-scrollbar-track{background:#0a1425}.menuWheel::-webkit-scrollbar-thumb{background:#4d8db7;border-radius:8px}
 .wheelItem{flex:0 0 min(76%,250px);min-height:156px;scroll-snap-align:center;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;text-align:left;padding:18px;background:linear-gradient(145deg,#1c3555,#0b1425);border:1px solid #5b82ab;color:#eef6ff}
 .wheelItem strong{font-size:20px;letter-spacing:1px}.wheelItem small{font-size:12px;line-height:1.4;color:#b6cbe4;font-weight:500}
