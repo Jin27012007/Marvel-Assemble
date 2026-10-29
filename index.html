@@ -29,21 +29,23 @@ function drawIron(x,y){
     const moving=Math.abs(player.vx)>24 && player.onGround && walkLoaded;
     const sprite=moving ? walkSheet : (idleLoaded ? idleSprite : (walkLoaded ? walkSheet : null));
     if(sprite){
-      let sourceX=0, sourceW=sprite.width, sourceH=sprite.height;
+      let sourceX=0, sourceW=sprite.naturalWidth||sprite.width, sourceH=sprite.naturalHeight||sprite.height;
       if(moving){
         walkClock+=1/60;
         if(walkClock>=0.12){walkClock=0;walkFrame=(walkFrame+1)%4;}
-        sourceW=360;sourceH=360;sourceX=walkFrame*sourceW;
+        sourceW=Math.floor((sprite.naturalWidth||sprite.width)/4);
+        sourceH=sprite.naturalHeight||sprite.height;
+        sourceX=walkFrame*sourceW;
       }else{walkFrame=0;walkClock=0;}
-      const dh=player.h;
-      const dw=moving ? player.w*1.35 : dh*(sprite.width/sprite.height);
-      const dx=x+(player.w-dw)/2,dy=y+player.h-dh;
+      const targetH=player.h;
+      const targetW=targetH*(sourceW/sourceH);
+      const dx=x+(player.w-targetW)/2, dy=y+player.h-targetH;
       ctx.save();
       if(player.face<0){
-        ctx.translate(dx+dw,0);ctx.scale(-1,1);
-        ctx.drawImage(sprite,sourceX,0,sourceW,sourceH,0,dy,dw,dh);
+        ctx.translate(dx+targetW,0);ctx.scale(-1,1);
+        ctx.drawImage(sprite,sourceX,0,sourceW,sourceH,0,dy,targetW,targetH);
       }else{
-        ctx.drawImage(sprite,sourceX,0,sourceW,sourceH,dx,dy,dw,dh);
+        ctx.drawImage(sprite,sourceX,0,sourceW,sourceH,dx,dy,targetW,targetH);
       }
       ctx.restore();return;
     }
