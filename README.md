@@ -6,6 +6,10 @@ Protótipo inicial de um hero shooter 2D lateral em HTML5/Canvas, começando pel
 
 Abra `index.html` em um navegador moderno. Para editar/testar pelo celular, você pode usar um ambiente de desenvolvimento HTML ou hospedar o repositório com GitHub Pages.
 
+## Oficina de sprites
+
+Para padronizar sprites de novos personagens sem mexer na jogabilidade, use a [Oficina de Sprites](assets/sprites/sprite-workbench.html) e siga o [guia de sprites](docs/SPRITE_PIPELINE.md). A oficina normaliza pose parada, caminhada e retrato para tamanhos consistentes. O protótipo ainda carrega apenas Iron Man diretamente no código; seleção automática de outros personagens é uma etapa futura.
+
 ## Controles
 
 - `A`/`D` ou setas esquerda/direita: mover
