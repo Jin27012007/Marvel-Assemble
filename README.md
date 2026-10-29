@@ -21,6 +21,10 @@ Para padronizar sprites de novos personagens sem mexer na jogabilidade, use a [O
 
 O painel Modo Treino oferece invencibilidade, energia infinita, geração de drones, torres de teste, restauração de HP/energia e limpeza de inimigos.
 
+## Menu e catálogo de personagens
+
+A tela inicial oferece Jogar, Treino e Configurações. Jogar abre a seleção de personagem; Treino abre a arena com o painel de treino; Configurações inclui controles na tela e tela cheia. O catálogo usa uma estrutura de dados por personagem e, nesta versão, inclui Iron Man e um modelo genérico de teste. Novos heróis precisarão de seus sprites e de uma entrada no catálogo; o catálogo já está preparado para expandir, mas ainda não é um sistema de importação automática de pastas.
+
 ## Estado do projeto
 
 Esta é uma prova de conceito local, não a versão completa. Seleção de personagens, equipes 6v6, três torres por equipe, sprites finais e multiplayer ainda serão implementados.
