@@ -236,12 +236,20 @@ function setBombardmentMode(active){
  else {for(const e of enemies)e.missileCount=0;}
 }
 function selectedMissileCount(){return enemies.reduce((sum,e)=>sum+(e.missileCount||0),0)}
+function launchBombardment(assignments){
+ const total=assignments.reduce((sum,item)=>sum+item.count,0);
+ for(const item of assignments){const e=item.target;for(let i=0;i<item.count;i++){bullets.push({x:player.x+player.w/2+(Math.random()-.5)*10,y:player.y+player.h*.30+i*2,vx:0,vy:0,r:5,dmg:10,type:"lockMissile",target:e,depth:DEPTH_CENTER,life:5,phase:"rise",phaseTime:0,launchX:player.x+player.w/2,angle:-Math.PI/2});}}
+ setBombardmentMode(false);bombardmentCooldown=bombardmentCooldownMax;say(total+" míssil(is) lançado(s) · 10 de dano por míssil");
+}
 function useBombardment(){
- if(!bombardmentMode){setBombardmentMode(true);return;}
+ if(bombardmentCooldown>0){say("Trava de Bombardeio recarregando");return;}
+ if(!bombardmentMode){
+  if(enemies.length===1){launchBombardment([{target:enemies[0],count:MAX_LOCK_MISSILES}]);return;}
+  setBombardmentMode(true);return;
+ }
  const total=selectedMissileCount();
  if(total===0){say("Escolha pelo menos um alvo antes de lançar");return;}
- for(const e of enemies){const count=e.missileCount||0;for(let i=0;i<count;i++){bullets.push({x:player.x+player.w/2+(Math.random()-.5)*10,y:player.y+player.h*.30+i*2,vx:0,vy:0,r:5,dmg:10,type:"lockMissile",target:e,depth:DEPTH_CENTER,life:5,phase:"rise",phaseTime:0,launchX:player.x+player.w/2,angle:-Math.PI/2});}}
- setBombardmentMode(false);bombardmentCooldown=bombardmentCooldownMax;say(total+" míssil(is) lançado(s) · 10 de dano por míssil");
+ launchBombardment(enemies.filter(e=>(e.missileCount||0)>0).map(e=>({target:e,count:e.missileCount})));
 }
 document.getElementById("bombardmentButton").addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();useBombardment()});
 function canvasPoint(e){const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/W,r.height/H),ox=(r.width-W*scale)/2,oy=(r.height-H*scale)/2;return{x:(e.clientX-r.left-ox)/scale,y:(e.clientY-r.top-oy)/scale}}
