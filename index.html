@@ -211,7 +211,9 @@ function fireRepulsor(){
  if(repulsorCooldown>0)return;
  const blast=repulsorCycle===2;
  const originX=player.x+(player.face===1?player.w:0);
- const originY=player.y+player.h*.46+(player.depth-DEPTH_CENTER)*LANE_HEIGHT;
+ // O projétil nasce na altura da mão/repulsor, não no centro vertical do corpo.
+ // Mantém a compensação de profundidade para acompanhar a faixa atual.
+ const originY=player.y+player.h*.30+(player.depth-DEPTH_CENTER)*LANE_HEIGHT;
  if(blast){
   bullets.push({x:originX,y:originY,vx:player.face*300,vy:0,r:18,dmg:105,type:'repulsorBlast',depth:player.depth,life:1.7,blastRadius:54,stun:1.2,exploded:false});
   repulsorShotKind="blast";repulsorCooldown=REPULSOR_BLAST_COOLDOWN;repulsorCooldownMax=REPULSOR_BLAST_COOLDOWN;repulsorCycle=0;
