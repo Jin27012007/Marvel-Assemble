@@ -1,48 +1,43 @@
-# Guia de sprites de personagens — Marvel Assemble
+# Fluxo de sprites de personagens — Marvel Assemble
 
-Este diretório define o padrão para adicionar, substituir ou remover sprites sem editar o código do jogo a cada personagem.
+Use a **[Oficina de Sprites](../assets/sprites/sprite-workbench.html)** para preparar as imagens pelo navegador, inclusive no celular. A ferramenta não altera `index.html` nem envia suas imagens a um servidor: ela padroniza e permite baixar os PNGs.
 
-## Regras fixas
+## Padrão único
 
-- **Origem das imagens:** `assets/sprites/<id-do-personagem>/`
-- Use IDs simples em minúsculas, sem espaços ou acentos: `ironman`, `spiderman`, `hulk`.
-- **Sprites de movimento:** use o mesmo tamanho de quadro para todos os personagens padrão. O padrão atual do jogo é altura de desenho de 76 unidades lógicas; o código calcula a largura a partir da proporção da imagem. Não redimensione o hitbox para encaixar a arte.
-- **Idle:** `idle.png`, um único quadro em PNG com transparência.
-- **Caminhada:** `walk-4frames.png`, quatro quadros horizontais iguais, todos com a mesma largura e altura, em ordem da animação. Cada quadro deve conter o personagem inteiro.
-- **Retrato:** `portrait.png`, PNG quadrado com transparência. O desenho deve ficar centralizado com espaço transparente ao redor para poder ser exibido em tamanhos diferentes sem cortar.
-- PNGs devem ter fundo transparente, não fundo branco/preto. Preserve pixel art em escala inteira sempre que possível.
-- Não coloque margem transparente diferente entre os quadros da animação: alinhe pés e centro do corpo para evitar que o personagem salte durante a caminhada.
+Cada personagem tem uma pasta própria em `assets/sprites/<id>/`, com ID em minúsculas, sem espaços nem acentos.
 
-## Estrutura padrão
-
-```
-assets/
-  sprites/
-    ironman/
-      idle.png
-      walk-4frames.png
-      portrait.png
-    novo-personagem/
-      idle.png
-      walk-4frames.png
-      portrait.png
+```text
+assets/sprites/
+  ironman/
+    idle.png
+    walk-4frames.png
+    portrait.png
+  spiderman/
+    idle.png
+    walk-4frames.png
+    portrait.png
 ```
 
-## Adicionar um personagem
+- `idle.png`: um quadro de 90×90 px.
+- `walk-4frames.png`: folha horizontal de 360×90 px, formada por quatro quadros de 90×90 px.
+- `portrait.png`: imagem quadrada de 128×128 px, com o rosto centralizado e margem transparente.
 
-1. Crie `assets/sprites/<id-do-personagem>/`.
-2. Adicione `idle.png`, `walk-4frames.png` e `portrait.png` seguindo as regras acima.
-3. Mantenha o canvas de origem para animações no mesmo tamanho de quadro do personagem padrão. A imagem do jogo é desenhada pela proporção da arte; o sprite não precisa ser forçado a um quadrado.
-4. Registre o personagem no futuro catálogo de personagens quando esse catálogo for implementado. Até lá, o protótipo atual só carrega os sprites de Iron Man.
-5. Teste idle, caminhada para os dois lados, troca de faixa e retrato em celular antes de integrar novos estados.
+A oficina recorta automaticamente margens transparentes do conteúdo, redimensiona a pose parada e os quatro quadros de caminhada usando a **mesma escala**, centraliza os quadros e alinha os pés. Isso reduz variação de tamanho entre personagens e evita que a animação dê saltos por mudar de escala entre quadros. O retrato é centralizado dentro de uma caixa com margem ajustável.
 
-## Substituir ou remover
+## Para adicionar ou substituir sprites
 
-- Para substituir uma pose, mantenha o mesmo nome e tamanho de quadro; o código não precisa ser alterado.
-- Para remover, confirme primeiro que nenhum código ou catálogo referencia o arquivo; apague só os arquivos daquele personagem.
-- Não reutilize o nome `ironman` para outro personagem.
-- Não altere `index.html` apenas para corrigir o enquadramento interno de um PNG: ajuste a margem transparente do próprio PNG e preserve seu formato.
+1. Abra a [Oficina de Sprites](../assets/sprites/sprite-workbench.html).
+2. Informe um ID de pasta e selecione os PNGs de pose parada, caminhada (quatro quadros horizontais iguais) e retrato.
+3. Confira os três resultados na prévia. Caso o desenho tenha fundo sólido em vez de transparência real, corrija o arquivo de origem primeiro.
+4. Baixe `idle.png`, `walk-4frames.png` e `portrait.png`.
+5. Envie os arquivos para `assets/sprites/<id>/` no GitHub, substituindo os arquivos existentes quando estiver atualizando um personagem.
 
-## Importante: estado atual
+Para editar um sprite, repita o processo com a imagem nova. Para retirar um personagem, confirme antes que nenhuma tela ou catálogo o referencia e remova só a pasta dele.
 
-O projeto ainda não possui um carregador genérico de seleção de personagens. Hoje, o código do protótipo carrega explicitamente os arquivos de Iron Man. Este documento padroniza os assets atuais para reduzir dificuldades futuras, mas a integração automática de qualquer personagem exigirá um catálogo/carregador em uma etapa posterior.
+## O que fica fixo
+
+O padrão de quadros para personagens normais é 90×90 px; não mude o tamanho de quadros por personagem. Personagens propositalmente grandes, como Hulk, precisarão de uma escala individual em um futuro catálogo de personagens, não de alteração da escala global nem da hitbox de todos.
+
+## Limite importante do protótipo
+
+Hoje, o jogo carrega Iron Man diretamente pelo código. A oficina padroniza os assets sem mexer na jogabilidade, mas **não torna um novo personagem selecionável automaticamente**. Para que adicionar ou remover uma pasta no futuro seja suficiente sem editar o código do jogo, ainda será necessário implementar um catálogo/carregador genérico de personagens. Não confunda a padronização dos arquivos com essa integração futura.
