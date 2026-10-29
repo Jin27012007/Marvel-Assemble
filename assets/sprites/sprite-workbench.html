@@ -33,7 +33,7 @@ small{color:#a9c3e2}.actions{display:flex;flex-wrap:wrap;gap:6px}
 <div><label for="portraitInput">Retrato (PNG)</label><input id="portraitInput" type="file" accept="image/png"></div>
 </div>
 <label for="frameCount">Quantidade de quadros na caminhada</label>
-<input id="frameCount" type="number" min="1" max="16" step="1" value="4">
+<input id="frameCount" type="number" min="4" max="4" step="1" value="4" readonly>
 <label for="portraitScale">Tamanho do desenho no retrato (percentual da caixa 128×128)</label>
 <input id="portraitScale" type="number" min="40" max="100" step="1" value="76">
 <button id="process">Preparar e conferir</button>
@@ -54,35 +54,62 @@ small{color:#a9c3e2}.actions{display:flex;flex-wrap:wrap;gap:6px}
 <script>
 const $=id=>document.getElementById(id);
 const state={idle:null,walk:null,portrait:null};
-function loadImage(file){return new Promise((resolve,reject)=>{if(!file){reject(new Error("Selecione o arquivo PNG."));return;}const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Não foi possível ler esta imagem."))};img.src=url;});}
-function contain(ctx,img,x,y,w,h){const scale=Math.min(w/img.naturalWidth,h/img.naturalHeight);const dw=Math.max(1,Math.round(img.naturalWidth*scale)),dh=Math.max(1,Math.round(img.naturalHeight*scale));ctx.drawImage(img,Math.round(x+(w-dw)/2),Math.round(y+(h-dh)/2),dw,dh);}
-function drawFrame(ctx,img,sx,sw){ctx.clearRect(0,0,90,90);ctx.imageSmoothingEnabled=false;const temp=document.createElement("canvas");temp.width=sw;temp.height=img.naturalHeight;temp.getContext("2d").drawImage(img,sx,0,sw,img.naturalHeight,0,0,sw,img.naturalHeight);const frame=new Image();return new Promise((resolve,reject)=>{frame.onload=()=>{contain(ctx,frame,0,0,90,90);resolve()};frame.onerror=reject;frame.src=temp.toDataURL("image/png")});}
-function setStatus(msg,kind=""){ $("status").textContent=msg;$("status").className="status "+kind; }
+function loadImage(file){return new Promise((resolve,reject)=>{if(!file){reject(new Error("Selecione os três arquivos PNG."));return;}const url=URL.createObjectURL(file);const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Não foi possível ler esta imagem."))};img.src=url;});}
+function asCanvas(img,sx=0,sy=0,sw=img.naturalWidth,sh=img.naturalHeight){const c=document.createElement("canvas");c.width=sw;c.height=sh;c.getContext("2d").drawImage(img,sx,sy,sw,sh,0,0,sw,sh);return c;}
+function alphaBounds(source){
+ const ctx=source.getContext("2d"),w=source.width,h=source.height;
+ const data=ctx.getImageData(0,0,w,h).data;let minX=w,minY=h,maxX=-1,maxY=-1;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>8){if(x<minX)minX=x;if(y<minY)minY=y;if(x>maxX)maxX=x;if(y>maxY)maxY=y;}
+ if(maxX<minX||maxY<minY)throw new Error("Um PNG parece estar totalmente transparente.");
+ const cropped=document.createElement("canvas");cropped.width=maxX-minX+1;cropped.height=maxY-minY+1;
+ cropped.getContext("2d").drawImage(source,minX,minY,cropped.width,cropped.height,0,0,cropped.width,cropped.height);
+ return cropped;
+}
+function makeBodyFrame(trimmed,scale){
+ const out=document.createElement("canvas");out.width=90;out.height=90;
+ const ctx=out.getContext("2d");ctx.imageSmoothingEnabled=false;
+ const w=Math.max(1,Math.round(trimmed.width*scale)),h=Math.max(1,Math.round(trimmed.height*scale));
+ ctx.drawImage(trimmed,Math.round((90-w)/2),86-h,w,h);
+ return out;
+}
+function contain(ctx,img,x,y,w,h){const iw=img.width||img.naturalWidth,ih=img.height||img.naturalHeight;const scale=Math.min(w/iw,h/ih);const dw=Math.max(1,Math.round(iw*scale)),dh=Math.max(1,Math.round(ih*scale));ctx.drawImage(img,Math.round(x+(w-dw)/2),Math.round(y+(h-dh)/2),dw,dh);}
+function paintPreview(source,target){target.width=source.width;target.height=source.height;target.getContext("2d").drawImage(source,0,0);}
 function download(canvas,name){const a=document.createElement("a");a.download=name;a.href=canvas.toDataURL("image/png");a.click();}
+function setStatus(msg,kind=""){$("status").textContent=msg;$("status").className="status "+kind;}
 $("process").addEventListener("click",async()=>{
  try{
-  const id=$("charId").value.trim();
-  if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))throw new Error("ID inválido. Use apenas minúsculas, números e hífen.");
-  const count=Number($("frameCount").value),scale=Number($("portraitScale").value);
-  if(!Number.isInteger(count)||count<1||count>16)throw new Error("A caminhada precisa ter de 1 a 16 quadros.");
-  if(!Number.isFinite(scale)||scale<40||scale>100)throw new Error("A escala do retrato deve ficar entre 40% e 100%.");
-  const idle=await loadImage($("idleInput").files[0]);
-  const walk=await loadImage($("walkInput").files[0]);
-  const portrait=await loadImage($("portraitInput").files[0]);
-  if(walk.naturalWidth%count!==0)throw new Error("A largura da folha de caminhada precisa ser divisível pela quantidade de quadros.");
-  const frameW=walk.naturalWidth/count;
-  const ic=$("idlePreview").getContext("2d");ic.clearRect(0,0,90,90);ic.imageSmoothingEnabled=false;contain(ic,idle,0,0,90,90);
-  const wc=$("walkPreview");wc.width=count*90;wc.height=90;const wctx=wc.getContext("2d");wctx.clearRect(0,0,wc.width,wc.height);wctx.imageSmoothingEnabled=false;
-  for(let i=0;i<count;i++){const temp=document.createElement("canvas");temp.width=frameW;temp.height=walk.naturalHeight;temp.getContext("2d").drawImage(walk,i*frameW,0,frameW,walk.naturalHeight,0,0,frameW,walk.naturalHeight);const frame=await loadImageFromCanvas(temp);contain(wctx,frame,i*90,0,90,90);}
-  const pc=$("portraitPreview"),pctx=pc.getContext("2d");pctx.clearRect(0,0,128,128);pctx.imageSmoothingEnabled=false;const box=128*scale/100;contain(pctx,portrait,(128-box)/2,(128-box)/2,box,box);
-  state.idle=$("idlePreview");state.walk=$("walkPreview");state.portrait=pc;
-  $("idleInfo").textContent=idle.naturalWidth+"×"+idle.naturalHeight+" → 90×90";$("walkInfo").textContent=walk.naturalWidth+"×"+walk.naturalHeight+" → "+count+" quadros de 90×90";$("portraitInfo").textContent=portrait.naturalWidth+"×"+portrait.naturalHeight+" → 128×128 com desenho a "+scale+"%";
-  ["downloadIdle","downloadWalk","downloadPortrait"].forEach(id=>$ (id).disabled=false);
-  $("downloadIdle").onclick=()=>download(state.idle,"idle.png");$("downloadWalk").onclick=()=>download(state.walk,"walk-4frames.png");$("downloadPortrait").onclick=()=>download(state.portrait,"portrait.png");
-  $("walkPreview").style.maxWidth="100%";setStatus("Sprites preparados. Confira se nenhum quadro perdeu partes do personagem antes de baixar.","ok");
+  const id=$("charId").value.trim();if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id))throw new Error("ID inválido. Use apenas minúsculas, números e hífen.");
+  const scalePct=Number($("portraitScale").value);if(!Number.isFinite(scalePct)||scalePct<40||scalePct>100)throw new Error("A escala do retrato deve ficar entre 40% e 100%.");
+  const [idleImg,walkImg,portraitImg]=await Promise.all([loadImage($("idleInput").files[0]),loadImage($("walkInput").files[0]),loadImage($("portraitInput").files[0])]);
+  const frameCount=4;if(walkImg.naturalWidth%frameCount!==0)throw new Error("A largura da caminhada precisa ser divisível por 4. Use quatro quadros horizontais iguais.");
+  const frameW=walkImg.naturalWidth/frameCount;
+  const idleTrim=alphaBounds(asCanvas(idleImg));
+  const walkTrims=[];
+  for(let i=0;i<frameCount;i++)walkTrims.push(alphaBounds(asCanvas(walkImg,i*frameW,0,frameW,walkImg.naturalHeight)));
+  // Use the same scale factor for idle and every walk frame to prevent size jitter.
+  const maxW=Math.max(idleTrim.width,...walkTrims.map(x=>x.width));
+  const maxH=Math.max(idleTrim.height,...walkTrims.map(x=>x.height));
+  const bodyScale=Math.min(82/maxW,82/maxH);
+  const idleOut=makeBodyFrame(idleTrim,bodyScale);
+  const walkOut=document.createElement("canvas");walkOut.width=360;walkOut.height=90;
+  const wx=walkOut.getContext("2d");wx.imageSmoothingEnabled=false;
+  for(let i=0;i<frameCount;i++){const fr=makeBodyFrame(walkTrims[i],bodyScale);wx.drawImage(fr,i*90,0);}
+  const portraitTrim=alphaBounds(asCanvas(portraitImg));
+  const portraitOut=document.createElement("canvas");portraitOut.width=128;portraitOut.height=128;
+  const px=portraitOut.getContext("2d");px.imageSmoothingEnabled=false;
+  const visibleBox=128*scalePct/100;contain(px,portraitTrim,(128-visibleBox)/2,(128-visibleBox)/2,visibleBox,visibleBox);
+  state.idle=idleOut;state.walk=walkOut;state.portrait=portraitOut;
+  paintPreview(idleOut,$("idlePreview"));paintPreview(walkOut,$("walkPreview"));paintPreview(portraitOut,$("portraitPreview"));
+  $("idleInfo").textContent=idleImg.naturalWidth+"×"+idleImg.naturalHeight+" → 90×90; conteúdo centralizado e alinhado pelos pés";
+  $("walkInfo").textContent=walkImg.naturalWidth+"×"+walkImg.naturalHeight+" → 4 quadros de 90×90; escala única para toda a animação";
+  $("portraitInfo").textContent=portraitImg.naturalWidth+"×"+portraitImg.naturalHeight+" → 128×128; desenho a "+scalePct+"%, com margens transparentes";
+  ["downloadIdle","downloadWalk","downloadPortrait"].forEach(id=>$(id).disabled=false);
+  $("downloadIdle").onclick=()=>download(state.idle,"idle.png");
+  $("downloadWalk").onclick=()=>download(state.walk,"walk-4frames.png");
+  $("downloadPortrait").onclick=()=>download(state.portrait,"portrait.png");
+  $("walkPreview").style.maxWidth="100%";setStatus("Pronto. A oficina remove margens transparentes variáveis, padroniza os quadros e mantém a mesma escala entre idle e caminhada. Confira o resultado antes de baixar.","ok");
  }catch(err){setStatus(err.message||"Falha ao preparar as imagens.","warn");}
 });
-function loadImageFromCanvas(canvas){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=canvas.toDataURL("image/png");});}
 </script>
 </body>
 </html>
