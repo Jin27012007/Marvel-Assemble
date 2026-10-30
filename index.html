@@ -216,6 +216,7 @@ let techCrossCooldown=0,techCrossCooldownMax=4,techCrossPhase="",techCrossTimer=
 // Ex.: Elevação de Ego1.png, Cruzado Tech1.png, Trava de Bombardeio1.png
 const SKILL_SPRITE_BASE='assets/skills/';
 const skillSpriteSequences={
+ 'Elevação de Ego - Salto':{frames:1,fps:8,loop:false},
  'Elevação de Ego':{frames:4,fps:8,loop:true},
  'Cruzado Tech':{frames:6,fps:10,loop:false},
  'Trava de Bombardeio':{frames:6,fps:10,loop:false},
@@ -255,7 +256,6 @@ function skillSpriteFrame(name,elapsedSeconds){
  const raw=Math.floor(Math.max(0,elapsedSeconds)*seq.config.fps);
  return seq.config.loop?raw%seq.frames.length:Math.min(seq.frames.length-1,raw);
 }
-
 let flying=false;const FLIGHT_ENERGY_PER_SECOND=35,ENERGY_REGEN_PER_SECOND=18;const MAX_LOCK_MISSILES=5;
 function fireRepulsor(){
  if(repulsorCooldown>0)return;
