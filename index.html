@@ -211,6 +211,51 @@ const REPULSOR_SMALL_COOLDOWN=0.3,REPULSOR_BLAST_COOLDOWN=3;
 let repulsorNextShot=0,repulsorCooldown=0,repulsorCycle=0,repulsorCooldownMax=0,repulsorShotKind="small";
 let bombardmentMode=false,bombardmentCooldown=0,bombardmentCooldownMax=8;
 let techCrossCooldown=0,techCrossCooldownMax=4,techCrossPhase="",techCrossTimer=0,techCrossTarget=null,techCrossHitDone=false;
+
+// Sprites externos de habilidades: assets/skills/<ataque><numero>.png
+// Ex.: Elevação de Ego1.png, Cruzado Tech1.png, Trava de Bombardeio1.png
+const SKILL_SPRITE_BASE='assets/skills/';
+const skillSpriteSequences={
+ 'Elevação de Ego':{frames:4,fps:8,loop:true},
+ 'Cruzado Tech':{frames:6,fps:10,loop:false},
+ 'Trava de Bombardeio':{frames:6,fps:10,loop:false},
+ 'Repulsor':{frames:4,fps:10,loop:false}
+};
+const skillSpriteCache={};
+function getSkillSpriteSequence(name){
+ const cfg=skillSpriteSequences[name];
+ if(!cfg)return null;
+ if(!skillSpriteCache[name]){
+  const frames=[];
+  for(let i=1;i<=cfg.frames;i++){
+   const img=new Image();
+   img.src=SKILL_SPRITE_BASE+encodeURIComponent(name)+i+'.png';
+   frames.push(img);
+  }
+  skillSpriteCache[name]={frames,config:cfg};
+ }
+ return skillSpriteCache[name];
+}
+function drawSkillSprite(name,frameIndex,x,y,w,h,flip=false){
+ const seq=getSkillSpriteSequence(name);
+ if(!seq)return false;
+ const count=seq.frames.length;
+ let index=Math.max(0,Math.min(count-1,Math.floor(frameIndex)));
+ const img=seq.frames[index];
+ if(!img||!img.complete||!img.naturalWidth)return false;
+ ctx.save();
+ if(flip){ctx.translate(x+w,y);ctx.scale(-1,1);ctx.drawImage(img,0,0,w,h);}
+ else ctx.drawImage(img,x,y,w,h);
+ ctx.restore();
+ return true;
+}
+function skillSpriteFrame(name,elapsedSeconds){
+ const seq=getSkillSpriteSequence(name);
+ if(!seq)return 0;
+ const raw=Math.floor(Math.max(0,elapsedSeconds)*seq.config.fps);
+ return seq.config.loop?raw%seq.frames.length:Math.min(seq.frames.length-1,raw);
+}
+
 let flying=false;const FLIGHT_ENERGY_PER_SECOND=35,ENERGY_REGEN_PER_SECOND=18;const MAX_LOCK_MISSILES=5;
 function fireRepulsor(){
  if(repulsorCooldown>0)return;
