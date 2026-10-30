@@ -135,8 +135,8 @@ function setTrainingPanel(open){
  toggle.style.display=gameMode==='training'&&!trainingPanelOpen?'block':'none';
  toggle.setAttribute('aria-expanded',String(trainingPanelOpen));
 }
-function startGame(mode){
- gameMode=mode;loadCharacter(selectedCharacter);
+async function startGame(mode){
+ gameMode=mode;await loadCharacter(selectedCharacter);
  document.getElementById('start').style.display='none';document.getElementById('characterSelect').style.display='none';document.getElementById('settingsScreen').style.display='none';
  document.getElementById('controls').style.display=controlsVisible?'flex':'none';
  document.getElementById('trainingPanelToggle').style.display='none';
@@ -177,9 +177,11 @@ let techCrossCooldown=0,techCrossCooldownMax=4,techCrossPhase="",techCrossTimer=
 // Sprites externos de habilidades: assets/skills/<ataque><numero>.png
 // Ex.: Elevação de Ego1.png, Cruzado Tech1.png, Trava de Bombardeio1.png
 const SKILL_SPRITE_BASE='assets/skills/';const skillSpriteSequences=window.MARVEL_SKILL_SPRITES||{};const skillSpriteCache={};
-function getSkillSpriteSequence(name){const cfg=skillSpriteSequences[name];if(!cfg)return null;if(!skillSpriteCache[name]){const frames=[];for(let i=1;i<=cfg.frames;i++){const img=new Image();img.onerror=()=>console.warn('[Habilidade] arquivo ausente:',name,i);img.src=SKILL_SPRITE_BASE+encodeURIComponent(name)+i+'.png';frames.push(img);}skillSpriteCache[name]={frames,config:cfg};}return skillSpriteCache[name];}
+function activeSpriteConfig(name){return selectedCharacter?.skills?.[name]||selectedCharacter?.animations?.[name]||skillSpriteSequences[name]||null;}
+function frameAssetPath(config,index){if(config.pattern)return config.pattern.replace('{frame}',String(index+1));if(config.src&&config.frames===1)return config.src;if(config.src&&config.frames>1)return config.src;return SKILL_SPRITE_BASE+encodeURIComponent(config.name||'')+(index+1)+'.png';}
+function getSkillSpriteSequence(name){const cfg=activeSpriteConfig(name);if(!cfg)return null;const key=(selectedCharacter?.id||'global')+':'+name;if(!skillSpriteCache[key]){const frames=[];const count=Math.max(1,Math.min(60,cfg.frames||1));for(let i=0;i<count;i++){const img=new Image();img.onerror=()=>console.warn('[Sprites '+key+'] quadro ausente:',i+1);img.src=cfg.pattern?frameAssetPath(cfg,i):(cfg.src&&count===1?cfg.src:SKILL_SPRITE_BASE+encodeURIComponent(name)+(i+1)+'.png');frames.push(img);}skillSpriteCache[key]={frames,config:cfg};}return skillSpriteCache[key];}
 function drawSpriteFrame(image,sx,sy,sw,sh,anchorX,anchorBottom,targetHeight,flip=false){if(!validImage(image)||!Number.isFinite(sw)||!Number.isFinite(sh)||sw<=0||sh<=0)return false;const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;if(sx<0||sy<0||sx+sw>iw||sy+sh>ih)return false;const scale=targetHeight/(sh+12),dw=sw*scale,dh=sh*scale,dx=anchorX-dw/2,dy=anchorBottom-dh;if(!Number.isFinite(dw)||!Number.isFinite(dh)||dw<=0||dh<=0)return false;ctx.save();if(flip){ctx.translate(anchorX,0);ctx.scale(-1,1);ctx.drawImage(image,sx,sy,sw,sh,-dw/2,dy,dw,dh);}else ctx.drawImage(image,sx,sy,sw,sh,dx,dy,dw,dh);ctx.restore();return true;}
-function drawSkillSprite(name,frameIndex,anchorX,anchorBottom,targetHeight,flip=false){const seq=getSkillSpriteSequence(name);if(!seq)return false;const img=seq.frames[Math.max(0,Math.min(seq.frames.length-1,Math.floor(frameIndex)))];return drawSpriteFrame(img,0,0,img?.naturalWidth||0,img?.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);}
+function drawSkillSprite(name,frameIndex,anchorX,anchorBottom,targetHeight,flip=false){const seq=getSkillSpriteSequence(name);if(!seq)return false;const config=seq.config,index=Math.max(0,Math.min(seq.frames.length-1,Math.floor(frameIndex))),img=seq.frames[index];if(!config.pattern&&config.src&&seq.frames.length>1){const check=validateStrip(img,config.frames);if(!check.ok)return false;return drawSpriteFrame(img,index*check.frameWidth,0,check.frameWidth,check.frameHeight,anchorX,anchorBottom,targetHeight,flip);}return drawSpriteFrame(img,0,0,img?.naturalWidth||0,img?.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);}
 function skillSpriteFrame(name,elapsedSeconds){const seq=getSkillSpriteSequence(name);if(!seq)return 0;const raw=Math.floor(Math.max(0,elapsedSeconds)*(seq.config.fps||8));return seq.config.loop?raw%seq.frames.length:Math.min(seq.frames.length-1,raw);}
 let flying=false;const FLIGHT_ENERGY_PER_SECOND=35,ENERGY_REGEN_PER_SECOND=18;const MAX_LOCK_MISSILES=5;
 function fireRepulsor(){
