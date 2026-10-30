@@ -1,51 +1,44 @@
-# Pipeline definitivo de sprites — Marvel Assemble
+# Pipeline de personagens e skins — Marvel Assemble
 
-## Personagens
+## Princípio de arquitetura
 
-Cada personagem tem uma pasta `assets/sprites/<id>/`, com ID em minúsculas e sem espaços ou acentos. Os dados de seleção ficam em `assets/sprites/character-catalog.js`.
+Personagens são dados e assets isolados. `index.html` contém apenas o motor de jogo, não deve conter caminhos fixos para um herói específico. Catálogo de personagens: `assets/sprites/character-catalog.js`. Os sprites de cada herói vivem em `assets/sprites/<id>/`.
+
+## Layout de um personagem
 
 ```text
 assets/sprites/
   character-catalog.js
   ironman/
+    portrait.png
     idle.png
     walk-4frames.png
-    portrait.png
   spiderman/
+    portrait.png
     idle.png
     walk-4frames.png
-    portrait.png
 ```
 
-- `idle.png`: 90×90 px, um quadro parado, PNG com transparência real.
-- `walk-4frames.png`: 360×90 px, quatro quadros de 90×90 em uma folha horizontal.
-- `portrait.png`: 128×128 px, PNG quadrado com transparência.
-- Todos os quadros devem usar a mesma caixa e linha de base dos pés. Não corte pés ou contornos rente à borda.
-- A oficina em `assets/sprites/sprite-workbench.html` ajuda a preparar os arquivos; confira a prévia antes de publicar.
+- `portrait.png`: 128×128 px.
+- `idle.png`: um quadro de 90×90 px.
+- `walk-4frames.png`: quatro quadros 90×90 lado a lado, folha 360×90 px.
+- PNG com transparência real; manter margens e pés completos dentro da caixa de cada quadro.
 
-### Adicionar um personagem
+## Adicionar personagem
 
-1. Crie `assets/sprites/<id>/` e coloque os três PNGs com os nomes exatos acima.
-2. Copie um objeto em `assets/sprites/character-catalog.js`.
-3. Altere `id`, `name`, `subtitle`, caminhos dos PNGs, `maxHp` e `maxEn`. Mantenha `visual: "sprite"` e `available: true`.
-4. Faça commit e teste a seleção e a animação no navegador.
+1. Crie `assets/sprites/<id>/` e envie os três arquivos PNG.
+2. Copie um objeto em `character-catalog.js` e altere ID, nome, caminhos, HP e EN.
+3. O seletor, HUD e carregador usam os mesmos campos do objeto. Não inclua lógica especial por nome/ID no motor.
+4. Teste idle, caminhada, retrato e troca de personagem antes de adicionar skins.
 
-O jogo carrega o catálogo externo, então não é necessário alterar a lógica principal em `index.html` para cada herói. O cadastro continua manual: GitHub Pages não permite ao navegador descobrir automaticamente todas as pastas do repositório.
+## Skins e atualizações
+
+Uma skin é uma variação visual do mesmo personagem: use uma pasta/ID de variante ou `skin` adicional no futuro, sem duplicar a implementação de combate. Todas as versões devem usar o mesmo contrato de assets. A seleção da skin só troca caminhos de PNG e metadados visuais, mantendo o ID lógico do personagem e os mesmos atributos, salvo decisão explícita de balanceamento.
 
 ## Habilidades
 
-As sequências são configuradas em `assets/skills/skill-catalog.js`. Para cada ataque, defina `frames`, `fps` e `loop`. O jogo procura arquivos em `assets/skills/<nome do ataque><número>.png`.
+`assets/skills/skill-catalog.js` é o catálogo de animações. Para cada sequência, informe `frames`, `fps` e `loop`. Os arquivos ficam em `assets/skills/<nome><número>.png`, começando no número 1.
 
-Exemplo: `Cruzado Tech1.png`, `Cruzado Tech2.png`. O número começa em 1 e indica a ordem do quadro. Para adicionar quadros, envie os PNGs e atualize `frames`; não altere o renderizador.
+## Limites atuais
 
-## Validação antes de publicar
-
-- PNG abre corretamente e tem canal alfa; não use fundo preto no lugar de transparência.
-- Nenhum pixel do personagem ou dos pés encosta ou é cortado pela borda.
-- Todos os quadros de uma sequência têm dimensões iguais.
-- Os nomes e a quantidade de quadros correspondem ao catálogo.
-- Teste a prévia e o jogo; sintaxe JavaScript válida não garante aparência visual.
-
-## Escala
-
-O padrão de personagem comum é 90×90 px. Personagens maiores devem receber ajuste individual no catálogo, sem alterar a escala global nem a hitbox de todos.
+O cadastro ainda é uma entrada manual no catálogo; o navegador do GitHub Pages não enumera pastas automaticamente. A seleção de personagem e carregamento de idle/walk/portrait são genéricos, mas novas classes de poderes, animações e hitboxes ainda podem exigir configuração própria. Não alterar o motor para trocar apenas arte.
