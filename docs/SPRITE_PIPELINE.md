@@ -1,10 +1,9 @@
-# Pipeline de personagens e skins — Marvel Assemble
+# Pipeline de sprites — Marvel Assemble
 
-## Princípio de arquitetura
+## Regra principal
+O motor não deve conhecer caminhos de arquivos de personagens. Toda arte é definida em `assets/sprites/character-catalog.js`. O personagem selecionado informa portrait, animações e habilidades. Para adicionar outro herói, crie sua pasta e inclua um objeto no catálogo; não edite `index.html`.
 
-Personagens são dados e assets isolados. `index.html` contém apenas o motor de jogo, não deve conter caminhos fixos para um herói específico. Catálogo de personagens: `assets/sprites/character-catalog.js`. Os sprites de cada herói vivem em `assets/sprites/<id>/`.
-
-## Layout de um personagem
+## Estrutura recomendada
 
 ```text
 assets/sprites/
@@ -16,29 +15,50 @@ assets/sprites/
   spiderman/
     portrait.png
     idle.png
-    walk-4frames.png
+    walk-6frames.png
+
+a assets/skills/                  # Pode ser usada por qualquer personagem
+  Elevação de Ego - Salto1.png
+  Elevação de Ego1.png ...
 ```
 
-- `portrait.png`: 128×128 px.
-- `idle.png`: um quadro de 90×90 px.
-- `walk-4frames.png`: quatro quadros 90×90 lado a lado, folha 360×90 px.
-- PNG com transparência real; manter margens e pés completos dentro da caixa de cada quadro.
+## Contrato do catálogo
+Cada personagem tem `id`, `name`, `visual`, `portrait`, `maxHp`, `maxEn`, `animations` e `skills`. Exemplo:
 
-## Adicionar personagem
+```js
+{
+  id: "spiderman",
+  name: "SPIDER-MAN",
+  visual: "sprite",
+  portrait: "assets/sprites/spiderman/portrait.png",
+  maxHp: 280,
+  maxEn: 220,
+  animations: {
+    idle: { src: "assets/sprites/spiderman/idle.png", frames: 1, fps: 1, loop: true },
+    walk: { src: "assets/sprites/spiderman/walk-6frames.png", frames: 6, fps: 10, loop: true },
+    flight: { pattern: "assets/sprites/spiderman/flight{frame}.png", frames: 4, fps: 8, loop: true }
+  },
+  skills: {
+    "Teia": { pattern: "assets/sprites/spiderman/Teia{frame}.png", frames: 5, fps: 12, loop: false }
+  }
+}
+```
 
-1. Crie `assets/sprites/<id>/` e envie os três arquivos PNG.
-2. Copie um objeto em `character-catalog.js` e altere ID, nome, caminhos, HP e EN.
-3. O seletor, HUD e carregador usam os mesmos campos do objeto. Não inclua lógica especial por nome/ID no motor.
-4. Teste idle, caminhada, retrato e troca de personagem antes de adicionar skins.
+Para uma animação em arquivos separados use `pattern` com o marcador `{frame}` (começa em 1). Para uma spritesheet horizontal use `src` e informe `frames`; a largura total precisa ser divisível pelo número de quadros.
 
-## Skins e atualizações
+## Regras para evitar leitura incorreta
+- PNG recomendado, com transparência real; não apague pixels de contorno automaticamente.
+- Em spritesheet horizontal, todos os quadros devem ter a mesma largura e altura e estar lado a lado, sem espaçadores externos.
+- O carregador valida imagem carregada, dimensões positivas e divisibilidade da largura pelo número de quadros. Arquivo ausente ou folha incompatível é ignorado e cai para arte genérica em vez de quebrar o jogo.
+- Use o mesmo tamanho de tela por quadro na mesma animação. Deixe margem transparente interna para evitar cortar mãos, pés ou efeitos.
+- Retrato é imagem individual, não spritesheet. Preferência por 128×128 px.
+- Idle pode ser imagem individual ou spritesheet de um quadro. Walk padrão tem quatro quadros, mas pode ter qualquer quantidade declarada no catálogo.
 
-Uma skin é uma variação visual do mesmo personagem: use uma pasta/ID de variante ou `skin` adicional no futuro, sem duplicar a implementação de combate. Todas as versões devem usar o mesmo contrato de assets. A seleção da skin só troca caminhos de PNG e metadados visuais, mantendo o ID lógico do personagem e os mesmos atributos, salvo decisão explícita de balanceamento.
+## Skins
+Uma skin é um conjunto alternativo de caminhos de arte no mesmo contrato. Uma skin não deve exigir lógica de combate nova. Ao adicionar skins, mantenha o mesmo conjunto de animações e proporções para que o motor continue independente da aparência.
 
 ## Habilidades
+As habilidades ficam em `skills` no objeto do personagem. O catálogo `assets/skills/skill-catalog.js` contém apenas padrões compartilhados. Arquivos numerados usam `{frame}` e começam em 1. Quando uma habilidade não possui sequência, o jogo mantém o efeito visual procedural.
 
-`assets/skills/skill-catalog.js` é o catálogo de animações. Para cada sequência, informe `frames`, `fps` e `loop`. Os arquivos ficam em `assets/skills/<nome><número>.png`, começando no número 1.
-
-## Limites atuais
-
-O cadastro ainda é uma entrada manual no catálogo; o navegador do GitHub Pages não enumera pastas automaticamente. A seleção de personagem e carregamento de idle/walk/portrait são genéricos, mas novas classes de poderes, animações e hitboxes ainda podem exigir configuração própria. Não alterar o motor para trocar apenas arte.
+## Limites conhecidos
+O GitHub Pages não lista pastas automaticamente; o registro de personagens e nomes dos arquivos ainda é manual no catálogo. O carregador faz verificações estruturais, mas não consegue determinar sozinho se a arte está visualmente correta ou se um quadro tem o personagem cortado. Essa conferência ainda exige abrir o jogo ou inspecionar as imagens.
