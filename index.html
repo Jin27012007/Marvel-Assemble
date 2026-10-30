@@ -134,7 +134,7 @@ function renderCatalog(){
  catalog.forEach(ch=>{
   const card=document.createElement('button');card.className='characterCard'+(selectedCharacter.id===ch.id?' selected':'');
   const icon=document.createElement('span');icon.className='characterIcon';
-  if(ch.id==='ironman'){const im=document.createElement('img');im.src=ch.portrait;im.style.width='100%';im.style.height='100%';im.style.objectFit='contain';im.style.imageRendering='pixelated';icon.appendChild(im)}
+  if(ch.portrait){const im=document.createElement('img');im.src=ch.portrait;im.style.width='100%';im.style.height='100%';im.style.objectFit='contain';im.style.imageRendering='pixelated';icon.appendChild(im)}
   else icon.textContent='◇';
   const title=document.createElement('strong');title.textContent=ch.name;
   const sub=document.createElement('small');sub.textContent=ch.subtitle;
