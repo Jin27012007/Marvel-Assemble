@@ -8,7 +8,8 @@ window.MARVEL_CHARACTER_CATALOG = [
       idle: { src: "assets/sprites/ironman/idle.png", frames: 1, fps: 1, loop: true },
       walk: { src: "assets/sprites/ironman/walk-4frames.png", frames: 4, fps: 8, loop: true },
       flightTakeoff: { src: "assets/skills/Elevação de Ego - Salto1.png", frames: 1, fps: 8, loop: false },
-      flight: { src: "assets/skills/Elevação de Ego1.png", pattern: "assets/skills/Elevação de Ego{frame}.png", frames: 4, fps: 8, loop: true }
+      flight: { src: "assets/skills/Elevação de Ego1.png", pattern: "assets/skills/Elevação de Ego{frame}.png", frames: 4, fps: 8, loop: true },
+      landing: { src: "assets/skills/Elevação de Ego - Pouso1.png", pattern: "assets/skills/Elevação de Ego - Pouso{frame}.png", frames: 3, fps: 8, loop: false }
     },
     skills: {
       "Cruzado Tech": { pattern: "assets/skills/Cruzado Tech{frame}.png", frames: 6, fps: 10, loop: false },
