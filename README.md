@@ -8,7 +8,7 @@ Abra `index.html` em um navegador moderno. Para editar/testar pelo celular, voc�
 
 ## Oficina de sprites
 
-Para padronizar sprites de novos personagens sem mexer na jogabilidade, use a [Oficina de Sprites](assets/sprites/sprite-workbench.html) e siga o [guia de sprites](docs/SPRITE_PIPELINE.md). A oficina normaliza pose parada, caminhada e retrato para tamanhos consistentes. O protótipo ainda carrega apenas Iron Man diretamente no código; seleção automática de outros personagens é uma etapa futura.
+Para padronizar sprites de novos personagens sem mexer na jogabilidade, use a [Oficina de Sprites](assets/sprites/sprite-workbench.html) e siga o [guia de sprites](docs/SPRITE_PIPELINE.md). A oficina normaliza pose parada, caminhada e retrato para tamanhos consistentes. O jogo carrega os dados do catálogo externo `assets/sprites/character-catalog.js`; veja `docs/SPRITE_PIPELINE.md` para adicionar personagens sem mexer na lógica principal. O cadastro de cada personagem ainda é manual, pois o GitHub Pages não permite descobrir pastas automaticamente.
 
 ## Controles
 
@@ -23,7 +23,7 @@ O painel Modo Treino oferece invencibilidade, energia infinita, geração de dro
 
 ## Menu e catálogo de personagens
 
-A tela inicial usa um carrossel horizontal rolável com Jogar, Treino e Configurações. Jogar e Treino abrem a mesma seleção de personagem; no Treino, o painel de opções fica recolhido e pode ser aberto por um botão. Configurações inclui controles na tela e tela cheia. O catálogo usa uma estrutura de dados por personagem e, nesta versão, inclui Iron Man e um modelo genérico de teste. Novos heróis precisarão de seus sprites e de uma entrada no catálogo; o catálogo já está preparado para expandir, mas ainda não é um sistema de importação automática de pastas.
+A tela inicial usa um carrossel horizontal rolável com Jogar, Treino e Configurações. Jogar e Treino abrem a mesma seleção de personagem; no Treino, o painel de opções fica recolhido e pode ser aberto por um botão. Configurações inclui controles na tela e tela cheia. O catálogo usa uma estrutura de dados por personagem e, nesta versão, inclui Iron Man e um modelo genérico de teste. Novos heróis precisam dos sprites e de uma entrada em `assets/sprites/character-catalog.js`.
 
 ## Estado do projeto
 

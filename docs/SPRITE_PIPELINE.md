@@ -1,13 +1,12 @@
-# Fluxo de sprites de personagens — Marvel Assemble
+# Pipeline definitivo de sprites — Marvel Assemble
 
-Use a **[Oficina de Sprites](../assets/sprites/sprite-workbench.html)** para preparar as imagens pelo navegador, inclusive no celular. A ferramenta não altera `index.html` nem envia suas imagens a um servidor: ela padroniza e permite baixar os PNGs.
+## Personagens
 
-## Padrão único
-
-Cada personagem tem uma pasta própria em `assets/sprites/<id>/`, com ID em minúsculas, sem espaços nem acentos.
+Cada personagem tem uma pasta `assets/sprites/<id>/`, com ID em minúsculas e sem espaços ou acentos. Os dados de seleção ficam em `assets/sprites/character-catalog.js`.
 
 ```text
 assets/sprites/
+  character-catalog.js
   ironman/
     idle.png
     walk-4frames.png
@@ -18,26 +17,35 @@ assets/sprites/
     portrait.png
 ```
 
-- `idle.png`: um quadro de 90×90 px.
-- `walk-4frames.png`: folha horizontal de 360×90 px, formada por quatro quadros de 90×90 px.
-- `portrait.png`: imagem quadrada de 128×128 px, com o rosto centralizado e margem transparente.
+- `idle.png`: 90×90 px, um quadro parado, PNG com transparência real.
+- `walk-4frames.png`: 360×90 px, quatro quadros de 90×90 em uma folha horizontal.
+- `portrait.png`: 128×128 px, PNG quadrado com transparência.
+- Todos os quadros devem usar a mesma caixa e linha de base dos pés. Não corte pés ou contornos rente à borda.
+- A oficina em `assets/sprites/sprite-workbench.html` ajuda a preparar os arquivos; confira a prévia antes de publicar.
 
-A oficina recorta automaticamente margens transparentes do conteúdo, redimensiona a pose parada e os quatro quadros de caminhada usando a **mesma escala**, centraliza os quadros e alinha os pés. Isso reduz variação de tamanho entre personagens e evita que a animação dê saltos por mudar de escala entre quadros. O retrato é centralizado dentro de uma caixa com margem ajustável.
+### Adicionar um personagem
 
-## Para adicionar ou substituir sprites
+1. Crie `assets/sprites/<id>/` e coloque os três PNGs com os nomes exatos acima.
+2. Copie um objeto em `assets/sprites/character-catalog.js`.
+3. Altere `id`, `name`, `subtitle`, caminhos dos PNGs, `maxHp` e `maxEn`. Mantenha `visual: "sprite"` e `available: true`.
+4. Faça commit e teste a seleção e a animação no navegador.
 
-1. Abra a [Oficina de Sprites](../assets/sprites/sprite-workbench.html).
-2. Informe um ID de pasta e selecione os PNGs de pose parada, caminhada (quatro quadros horizontais iguais) e retrato.
-3. Confira os três resultados na prévia. Caso o desenho tenha fundo sólido em vez de transparência real, corrija o arquivo de origem primeiro.
-4. Baixe `idle.png`, `walk-4frames.png` e `portrait.png`.
-5. Envie os arquivos para `assets/sprites/<id>/` no GitHub, substituindo os arquivos existentes quando estiver atualizando um personagem.
+O jogo carrega o catálogo externo, então não é necessário alterar a lógica principal em `index.html` para cada herói. O cadastro continua manual: GitHub Pages não permite ao navegador descobrir automaticamente todas as pastas do repositório.
 
-Para editar um sprite, repita o processo com a imagem nova. Para retirar um personagem, confirme antes que nenhuma tela ou catálogo o referencia e remova só a pasta dele.
+## Habilidades
 
-## O que fica fixo
+As sequências são configuradas em `assets/skills/skill-catalog.js`. Para cada ataque, defina `frames`, `fps` e `loop`. O jogo procura arquivos em `assets/skills/<nome do ataque><número>.png`.
 
-O padrão de quadros para personagens normais é 90×90 px; não mude o tamanho de quadros por personagem. Personagens propositalmente grandes, como Hulk, precisarão de uma escala individual em um futuro catálogo de personagens, não de alteração da escala global nem da hitbox de todos.
+Exemplo: `Cruzado Tech1.png`, `Cruzado Tech2.png`. O número começa em 1 e indica a ordem do quadro. Para adicionar quadros, envie os PNGs e atualize `frames`; não altere o renderizador.
 
-## Limite importante do protótipo
+## Validação antes de publicar
 
-Hoje, o jogo carrega Iron Man diretamente pelo código. A oficina padroniza os assets sem mexer na jogabilidade, mas **não torna um novo personagem selecionável automaticamente**. Para que adicionar ou remover uma pasta no futuro seja suficiente sem editar o código do jogo, ainda será necessário implementar um catálogo/carregador genérico de personagens. Não confunda a padronização dos arquivos com essa integração futura.
+- PNG abre corretamente e tem canal alfa; não use fundo preto no lugar de transparência.
+- Nenhum pixel do personagem ou dos pés encosta ou é cortado pela borda.
+- Todos os quadros de uma sequência têm dimensões iguais.
+- Os nomes e a quantidade de quadros correspondem ao catálogo.
+- Teste a prévia e o jogo; sintaxe JavaScript válida não garante aparência visual.
+
+## Escala
+
+O padrão de personagem comum é 90×90 px. Personagens maiores devem receber ajuste individual no catálogo, sem alterar a escala global nem a hitbox de todos.
