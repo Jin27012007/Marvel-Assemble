@@ -184,25 +184,16 @@ function drawIron(x,y){
     const moving=!flying&&(Math.abs(player.vx)>24||Math.abs(joystickY)>.12||depthKeys.up||depthKeys.down||keys.KeyI||keys.KeyO||keys.Space||keys.ArrowUp||keys.ArrowDown||keys.KeyW) && player.onGround && walkLoaded;
     const sprite=moving ? walkSheet : (idleLoaded ? idleSprite : (walkLoaded ? walkSheet : null));
     if(sprite){
-      let sourceX=0, sourceW=sprite.naturalWidth||sprite.width, sourceH=sprite.naturalHeight||sprite.height;
+      const sheetW=sprite.naturalWidth||sprite.width,sheetH=sprite.naturalHeight||sprite.height;
+      let sourceX=0,sourceW=sheetW,sourceH=sheetH;
       if(moving){
         walkClock+=1/60;
         if(walkClock>=0.12){walkClock=0;walkFrame=(walkFrame+1)%4;}
-        sourceW=Math.floor((sprite.naturalWidth||sprite.width)/4);
-        sourceH=sprite.naturalHeight||sprite.height;
-        sourceX=walkFrame*sourceW;
+        sourceW=Math.floor(sheetW/4);sourceH=sheetH;sourceX=walkFrame*sourceW;
       }else{walkFrame=0;walkClock=0;}
-      const targetH=player.h;
-      const targetW=targetH*(sourceW/sourceH);
-      const dx=x+(player.w-targetW)/2, dy=y+player.h-targetH;
-      ctx.save();
-      if(player.face<0){
-        ctx.translate(dx+targetW,0);ctx.scale(-1,1);
-        ctx.drawImage(sprite,sourceX,0,sourceW,sourceH,0,dy,targetW,targetH);
-      }else{
-        ctx.drawImage(sprite,sourceX,0,sourceW,sourceH,dx,dy,targetW,targetH);
-      }
-      ctx.restore();return;
+      const anchorX=x+player.w/2,anchorBottom=y+player.h,targetH=player.h;
+      drawSpriteFrame(sprite,sourceX,0,sourceW,sourceH,anchorX,anchorBottom,targetH,player.face<0);
+      return;
     }
     walkFrame=0;walkClock=0;
   }
@@ -239,22 +230,19 @@ function getSkillSpriteSequence(name){
 }
 // Renderizador único de sprites de personagem/habilidade.
 // Nunca deforma a imagem: usa proporção intrínseca e ancora no centro inferior.
+function drawSpriteFrame(image,sx,sy,sw,sh,anchorX,anchorBottom,targetHeight,flip=false){
+ if(!image||!image.complete||!sw||!sh||!image.naturalWidth)return false;
+ const scale=targetHeight/sh,drawW=sw*scale,drawH=sh*scale,dx=anchorX-drawW/2,dy=anchorBottom-drawH;
+ ctx.save();
+ if(flip){ctx.translate(anchorX,0);ctx.scale(-1,1);ctx.drawImage(image,sx,sy,sw,sh,-drawW/2,dy,drawW,drawH);}
+ else ctx.drawImage(image,sx,sy,sw,sh,dx,dy,drawW,drawH);
+ ctx.restore();return true;
+}
 function drawSkillSprite(name,frameIndex,anchorX,anchorBottom,targetHeight,flip=false){
  const seq=getSkillSpriteSequence(name);
  if(!seq)return false;
- const count=seq.frames.length;
- const index=Math.max(0,Math.min(count-1,Math.floor(frameIndex)));
- const img=seq.frames[index];
- if(!img||!img.complete||!img.naturalWidth||!img.naturalHeight)return false;
- const naturalW=img.naturalWidth,naturalH=img.naturalHeight;
- const scale=targetHeight/naturalH;
- const drawW=naturalW*scale,drawH=naturalH*scale;
- const dx=anchorX-drawW/2,dy=anchorBottom-drawH;
- ctx.save();
- if(flip){ctx.translate(anchorX,0);ctx.scale(-1,1);ctx.drawImage(img,-drawW/2,dy,drawW,drawH);}
- else ctx.drawImage(img,dx,dy,drawW,drawH);
- ctx.restore();
- return true;
+ const index=Math.max(0,Math.min(seq.frames.length-1,Math.floor(frameIndex))),img=seq.frames[index];
+ return drawSpriteFrame(img,0,0,img?.naturalWidth||0,img?.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);
 }
 function skillSpriteFrame(name,elapsedSeconds){
  const seq=getSkillSpriteSequence(name);
