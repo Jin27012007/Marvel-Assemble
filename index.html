@@ -106,25 +106,11 @@ function makeGenericFrame(frame=0){
 }
 function canvasImage(canvas){const img=new Image();img.src=canvas.toDataURL('image/png');img.onload=()=>{};return img}
 function genericPortrait(){const cv=document.createElement('canvas');cv.width=128;cv.height=128;const g=cv.getContext('2d');g.fillStyle='#152641';g.fillRect(0,0,128,128);g.fillStyle='#d3e0ed';g.fillRect(40,20,48,45);g.fillStyle='#3b86b8';g.fillRect(34,65,60,45);g.fillStyle='#8de8ff';g.fillRect(51,35,26,12);return cv.toDataURL('image/png')}
-function loadCharacter(character){
- if(!character||!character.id)throw new Error('Personagem inválido no catálogo.');
- currentCharacterId=character.id;selectedCharacter=character;
- idleSprite=null;idleLoaded=false;walkSheet=null;walkLoaded=false;walkFrame=0;walkClock=0;
- const portrait=document.querySelector('#hud .portrait img');
- if(character.visual==='sprite'){
-   const idle=new Image();idle.onload=()=>{if(currentCharacterId===character.id){idleSprite=idle;idleLoaded=true}};idle.onerror=()=>console.error('Falha ao carregar idle:',character.id,character.idle);idle.src=character.idle;
-   const walk=new Image();walk.onload=()=>{if(currentCharacterId===character.id){walkSheet=walk;walkLoaded=true}};walk.onerror=()=>console.error('Falha ao carregar walk:',character.id,character.walk);walk.src=character.walk;
-   portrait.src=character.portrait||'';
- }else{
-   idleSprite=canvasImage(makeGenericFrame(0));idleLoaded=true;
-   const sheet=document.createElement('canvas');sheet.width=360;sheet.height=90;const sg=sheet.getContext('2d');
-   for(let i=0;i<4;i++)sg.drawImage(makeGenericFrame(i),i*90,0);
-   walkSheet=canvasImage(sheet);walkLoaded=true;portrait.src=character.portrait||genericPortrait();
- }
- document.querySelector('#hud .name').textContent=character.name;
- player.maxHp=character.maxHp||300;player.hp=player.maxHp;player.maxEn=character.maxEn||200;player.en=player.maxEn;
- document.getElementById('level').textContent='NÍVEL 1 · '+(gameMode==='training'?'TREINO':'PARTIDA');
-}
+const spriteAssets={idle:null,walk:null,portrait:null};
+function validImage(img){return !!img&&img.complete&&img.naturalWidth>0&&img.naturalHeight>0;}
+function validateStrip(img,frames){if(!validImage(img))return {ok:false,reason:'imagem indisponível'};if(!Number.isInteger(frames)||frames<1||img.naturalWidth%frames!==0)return {ok:false,reason:'largura incompatível com '+frames+' quadros'};const fw=img.naturalWidth/frames,fh=img.naturalHeight;if(fw<8||fh<8)return {ok:false,reason:'quadro pequeno demais'};return {ok:true,frameWidth:fw,frameHeight:fh};}
+function loadImage(src,label){return new Promise(resolve=>{if(!src){resolve(null);return;}const img=new Image();img.onload=()=>resolve(validImage(img)?img:null);img.onerror=()=>{console.warn('[Sprites] Falha ao carregar '+label+': '+src);resolve(null)};img.src=src;});}
+async function loadCharacter(character){if(!character||!character.id)throw new Error('Personagem inválido no catálogo.');const id=character.id;currentCharacterId=id;selectedCharacter=character;spriteAssets.idle=spriteAssets.walk=spriteAssets.portrait=null;idleSprite=null;idleLoaded=false;walkSheet=null;walkLoaded=false;walkFrame=0;walkClock=0;const portrait=document.querySelector('#hud .portrait img');if(character.visual==='sprite'){const [idle,walk,portraitImg]=await Promise.all([loadImage(character.animations?.idle?.src||character.idle,'idle'),loadImage(character.animations?.walk?.src||character.walk,'walk'),loadImage(character.portrait,'portrait')]);if(currentCharacterId!==id)return;const cfg=character.animations?.walk||{frames:4,fps:8},check=walk?validateStrip(walk,cfg.frames||4):{ok:false,reason:'arquivo ausente'};if(idle){spriteAssets.idle=idle;idleSprite=idle;idleLoaded=true}else console.warn('[Sprites '+id+'] idle indisponível.');if(check.ok){spriteAssets.walk=walk;walkSheet=walk;walkLoaded=true;player.walkFrameWidth=check.frameWidth;player.walkFrameHeight=check.frameHeight}else console.warn('[Sprites '+id+'] walk ignorado: '+check.reason);if(portraitImg){spriteAssets.portrait=portraitImg;portrait.src=character.portrait}else portrait.src=genericPortrait();}else{const idle=makeGenericFrame(0),sheet=document.createElement('canvas');sheet.width=360;sheet.height=90;const g=sheet.getContext('2d');for(let i=0;i<4;i++)g.drawImage(makeGenericFrame(i),i*90,0);idleSprite=idle;idleLoaded=true;walkSheet=sheet;walkLoaded=true;portrait.src=character.portrait||genericPortrait();}if(!idleLoaded&&!walkLoaded){idleSprite=makeGenericFrame(0);idleLoaded=true;}document.querySelector('#hud .name').textContent=character.name||id.toUpperCase();player.maxHp=character.maxHp||300;player.hp=player.maxHp;player.maxEn=character.maxEn||200;player.en=player.maxEn;document.getElementById('level').textContent='NÍVEL 1 · '+(gameMode==='training'?'TREINO':'PARTIDA');}
 function renderCatalog(){
  const grid=document.getElementById('characterGrid');grid.innerHTML='';
  document.getElementById('characterSelectSubtitle').textContent=pendingMode==='training'?'ESCOLHA UM PERSONAGEM PARA TREINAR':'ESCOLHA UM PERSONAGEM PARA JOGAR';
@@ -181,23 +167,7 @@ function releaseJoystick(e){if(e.pointerId===joystickPointer){e.preventDefault()
 window.addEventListener('pointerup',releaseJoystick);window.addEventListener('pointercancel',releaseJoystick);
 window.addEventListener('blur',()=>{resetJoystick();for(const k of Object.keys(keys))keys[k]=false;depthKeys.up=depthKeys.down=false});window.addEventListener('keydown',e=>{keys[e.code]=true;if((e.code==='KeyF'||e.code==='KeyJ')&&!e.repeat)fireRepulsor();if(e.code==='KeyE'&&!e.repeat)toggleFlight();if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});window.addEventListener('keyup',e=>keys[e.code]=false);document.getElementById('repulsorButton').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();fireRepulsor()});let flightTakeoffTimer=0,flightHoverStart=0;function toggleFlight(){if(flying){flying=false;flightTakeoffTimer=0;document.getElementById('flightButton').classList.remove('targeting');document.getElementById('flightButtonText').textContent='VOAR';say('Voo desativado');return;}if(player.en<10){say('Energia insuficiente para decolar');return;}flying=true;flightTakeoffTimer=0.45;flightHoverStart=elapsed+0.45;player.onGround=false;player.vy=-170;document.getElementById('flightButton').classList.add('targeting');document.getElementById('flightButtonText').textContent='VOANDO';say('Elevação de Ego ativada · energia em consumo');}document.getElementById('flightButton').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleFlight()});
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}function text(s,x,y,size=12,c='#fff'){ctx.fillStyle=c;ctx.font=`bold ${size}px monospace`;ctx.fillText(s,x,y)}function drawSky(){let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#101d43');g.addColorStop(.55,'#31527b');g.addColorStop(1,'#f39b75');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);for(let i=0;i<85;i++){let x=(i*137-camera*.12)%(W+30);if(x<0)x+=W;rect(x,(i*47)%215,2,2,'#d7e9ff')}for(let layer=0;layer<3;layer++){let bw=[48,66,82][layer],base=ground-layer*24;for(let i=0;i<22;i++){let x=(i*bw-camera*(.18+layer*.12))%(W+bw);if(x< -bw)x+=W+bw;let h=80+((i*53+layer*37)%190);rect(x,base-h,bw-5,h,['#182944','#17253d','#101c32'][layer]);for(let yy=base-h+12;yy<base-8;yy+=15)for(let xx=x+7;xx<x+bw-9;xx+=12)if(Math.floor(xx+yy+i)%4!==0)rect(xx,yy,4,6,['#f6bf75','#4cc5ef','#f48b78'][Math.floor((xx+yy)%3)])}}rect(710,72,72,300,'#1b2c49');rect(721,55,50,20,'#24476c');rect(734,28,24,27,'#24476c');text('STARK',718,100,13,'#56d7ff');ctx.strokeStyle='#5ccfff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(605,145,26,0,Math.PI*2);ctx.stroke();text('A',594,155,32,'#77ddff');const gridTop=ground-(DEPTH_CENTER+1)*LANE_HEIGHT;rect(0,gridTop,W,LANES*LANE_HEIGHT,'#333e52');for(let lane=0;lane<LANES;lane++){const yy=gridTop+lane*LANE_HEIGHT;const active=lane===DEPTH_CENTER;rect(0,yy,W,2,active?'#a3b6c8':'#647991');for(let xx=0;xx<W;xx+=64){rect(xx+1,yy+3,61,14,active?'#35455f':'#303f56');rect(xx+1,yy+3,61,1,active?'#526176':'#40516a');rect(xx+1,yy+16,61,2,'#202d40')}}rect(0,gridTop+LANES*LANE_HEIGHT,W,2,'#647991');rect(0,ground-52,W,3,'#8595a9');rect(0,ground-25,W,2,'#687b93');for(let x=0;x<W;x+=26)rect(x,ground-52,2,28,'#70829a');for(const x of [60,350,770]){rect(x,ground-45,48,43,'#805a3c');rect(x+4,ground-40,40,34,'#9d744b');rect(x+22,ground-40,4,34,'#62472f');rect(x+4,ground-24,40,3,'#62472f')}rect(25,225,190,92,'#101a34');rect(30,230,180,82,'#1c355a');text('NEW YORK',45,258,18,'#f2f4fa');text('STARK INDUSTRIES',45,282,10,'#65d9ff')}
-function drawIron(x,y){
-    const moving=!flying&&(Math.abs(player.vx)>24||Math.abs(joystickY)>.12||depthKeys.up||depthKeys.down||keys.KeyI||keys.KeyO||keys.Space||keys.ArrowUp||keys.ArrowDown||keys.KeyW) && player.onGround && walkLoaded;
-    const sprite=moving ? walkSheet : (idleLoaded ? idleSprite : (walkLoaded ? walkSheet : null));
-    if(sprite){
-      const sheetW=sprite.naturalWidth||sprite.width,sheetH=sprite.naturalHeight||sprite.height;
-      let sourceX=0,sourceW=sheetW,sourceH=sheetH;
-      if(moving){
-        walkClock+=1/60;
-        if(walkClock>=0.12){walkClock=0;walkFrame=(walkFrame+1)%4;}
-        sourceW=Math.floor(sheetW/4);sourceH=sheetH;sourceX=walkFrame*sourceW;
-      }else{walkFrame=0;walkClock=0;}
-      const anchorX=x+player.w/2,anchorBottom=y+player.h,targetH=player.h;
-      drawSpriteFrame(sprite,sourceX,0,sourceW,sourceH,anchorX,anchorBottom,targetH,player.face<0);
-      return;
-    }
-    walkFrame=0;walkClock=0;
-  }
+function drawIron(x,y){const moving=!flying&&(Math.abs(player.vx)>24||Math.abs(joystickY)>.12||depthKeys.up||depthKeys.down||keys.KeyI||keys.KeyO||keys.Space||keys.ArrowUp||keys.ArrowDown||keys.KeyW)&&player.onGround&&walkLoaded;const sprite=moving?walkSheet:(idleLoaded?idleSprite:(walkLoaded?walkSheet:null));if(sprite){let sx=0,sw=sprite.naturalWidth||sprite.width,sh=sprite.naturalHeight||sprite.height;if(moving){const cfg=selectedCharacter?.animations?.walk||{},count=Math.max(1,cfg.frames||4),check=validateStrip(sprite,count);if(check.ok){walkClock+=1/60;if(walkClock>=1/Math.max(1,cfg.fps||8)){walkClock=0;walkFrame=(walkFrame+1)%count;}sw=check.frameWidth;sh=check.frameHeight;sx=walkFrame*sw;}else walkLoaded=false;}else{walkFrame=0;walkClock=0;}if((!moving||walkLoaded)&&drawSpriteFrame(sprite,sx,0,sw,sh,x+player.w/2,y+player.h,player.h,player.face<0))return;}const fallback=makeGenericFrame(0);drawSpriteFrame(fallback,0,0,90,90,x+player.w/2,y+player.h,player.h,player.face<0);}
 function drawDrone(e){let x=e.x-camera,y=e.y+((e.depth??DEPTH_CENTER)-DEPTH_CENTER)*LANE_HEIGHT;rect(x+4,y+7,31,27,'#222c3b');rect(x,y+12,9,18,'#667488');rect(x+30,y+12,9,18,'#667488');rect(x+10,y+2,20,9,'#455469');rect(x+12,y+12,6,4,'#ff3b50');rect(x+23,y+12,6,4,'#ff3b50');rect(x+11,y+28,18,5,'#101723');rect(x+14,y+34,12,4,'#111a29');rect(x+1,y-10,37,4,'#151a25');rect(x+1,y-10,37*Math.max(0,e.hp/e.max),4,'#ff384d')}
 const REPULSOR_SMALL_COOLDOWN=0.3,REPULSOR_BLAST_COOLDOWN=3;
 let repulsorNextShot=0,repulsorCooldown=0,repulsorCycle=0,repulsorCooldownMax=0,repulsorShotKind="small";
@@ -206,54 +176,11 @@ let techCrossCooldown=0,techCrossCooldownMax=4,techCrossPhase="",techCrossTimer=
 
 // Sprites externos de habilidades: assets/skills/<ataque><numero>.png
 // Ex.: Elevação de Ego1.png, Cruzado Tech1.png, Trava de Bombardeio1.png
-const SKILL_SPRITE_BASE='assets/skills/';
-const skillSpriteSequences=window.MARVEL_SKILL_SPRITES||{
- 'Elevação de Ego - Salto':{frames:1,fps:8,loop:false},
- 'Elevação de Ego':{frames:4,fps:8,loop:true},
- 'Cruzado Tech':{frames:6,fps:10,loop:false},
- 'Trava de Bombardeio':{frames:6,fps:10,loop:false},
- 'Repulsor':{frames:4,fps:10,loop:false}
-};
-const skillSpriteCache={};
-function getSkillSpriteSequence(name){
- const cfg=skillSpriteSequences[name];
- if(!cfg)return null;
- if(!skillSpriteCache[name]){
-  const frames=[];
-  for(let i=1;i<=cfg.frames;i++){
-   const img=new Image();
-   img.src=SKILL_SPRITE_BASE+encodeURIComponent(name)+i+'.png';
-   frames.push(img);
-  }
-  skillSpriteCache[name]={frames,config:cfg};
- }
- return skillSpriteCache[name];
-}
-// Renderizador único de sprites de personagem/habilidade.
-// Nunca deforma a imagem: usa proporção intrínseca e ancora no centro inferior.
-function drawSpriteFrame(image,sx,sy,sw,sh,anchorX,anchorBottom,targetHeight,flip=false){
- if(!image||!image.complete||!sw||!sh||!image.naturalWidth)return false;
- // Os quadros são recortados dentro de uma tela lógica com margem inferior
- // transparente. Não removemos nem alteramos pixels do contorno do desenho.
- const padBottom=12,logicalH=sh+padBottom;
- const scale=targetHeight/logicalH,drawW=sw*scale,drawH=sh*scale,dx=anchorX-drawW/2,dy=anchorBottom-drawH;
- ctx.save();
- if(flip){ctx.translate(anchorX,0);ctx.scale(-1,1);ctx.drawImage(image,sx,sy,sw,sh,-drawW/2,dy,drawW,drawH);}
- else ctx.drawImage(image,sx,sy,sw,sh,dx,dy,drawW,drawH);
- ctx.restore();return true;
-}
-function drawSkillSprite(name,frameIndex,anchorX,anchorBottom,targetHeight,flip=false){
- const seq=getSkillSpriteSequence(name);
- if(!seq)return false;
- const index=Math.max(0,Math.min(seq.frames.length-1,Math.floor(frameIndex))),img=seq.frames[index];
- return drawSpriteFrame(img,0,0,img?.naturalWidth||0,img?.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);
-}
-function skillSpriteFrame(name,elapsedSeconds){
- const seq=getSkillSpriteSequence(name);
- if(!seq)return 0;
- const raw=Math.floor(Math.max(0,elapsedSeconds)*seq.config.fps);
- return seq.config.loop?raw%seq.frames.length:Math.min(seq.frames.length-1,raw);
-}
+const SKILL_SPRITE_BASE='assets/skills/';const skillSpriteSequences=window.MARVEL_SKILL_SPRITES||{};const skillSpriteCache={};
+function getSkillSpriteSequence(name){const cfg=skillSpriteSequences[name];if(!cfg)return null;if(!skillSpriteCache[name]){const frames=[];for(let i=1;i<=cfg.frames;i++){const img=new Image();img.onerror=()=>console.warn('[Habilidade] arquivo ausente:',name,i);img.src=SKILL_SPRITE_BASE+encodeURIComponent(name)+i+'.png';frames.push(img);}skillSpriteCache[name]={frames,config:cfg};}return skillSpriteCache[name];}
+function drawSpriteFrame(image,sx,sy,sw,sh,anchorX,anchorBottom,targetHeight,flip=false){if(!validImage(image)||!Number.isFinite(sw)||!Number.isFinite(sh)||sw<=0||sh<=0)return false;const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height;if(sx<0||sy<0||sx+sw>iw||sy+sh>ih)return false;const scale=targetHeight/(sh+12),dw=sw*scale,dh=sh*scale,dx=anchorX-dw/2,dy=anchorBottom-dh;if(!Number.isFinite(dw)||!Number.isFinite(dh)||dw<=0||dh<=0)return false;ctx.save();if(flip){ctx.translate(anchorX,0);ctx.scale(-1,1);ctx.drawImage(image,sx,sy,sw,sh,-dw/2,dy,dw,dh);}else ctx.drawImage(image,sx,sy,sw,sh,dx,dy,dw,dh);ctx.restore();return true;}
+function drawSkillSprite(name,frameIndex,anchorX,anchorBottom,targetHeight,flip=false){const seq=getSkillSpriteSequence(name);if(!seq)return false;const img=seq.frames[Math.max(0,Math.min(seq.frames.length-1,Math.floor(frameIndex)))];return drawSpriteFrame(img,0,0,img?.naturalWidth||0,img?.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);}
+function skillSpriteFrame(name,elapsedSeconds){const seq=getSkillSpriteSequence(name);if(!seq)return 0;const raw=Math.floor(Math.max(0,elapsedSeconds)*(seq.config.fps||8));return seq.config.loop?raw%seq.frames.length:Math.min(seq.frames.length-1,raw);}
 let flying=false;const FLIGHT_ENERGY_PER_SECOND=35,ENERGY_REGEN_PER_SECOND=18;const MAX_LOCK_MISSILES=5;
 function fireRepulsor(){
  if(repulsorCooldown>0)return;
