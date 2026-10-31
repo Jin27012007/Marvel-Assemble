@@ -1,30 +1,32 @@
 # Marvel Assemble
 
-Protótipo inicial de um hero shooter 2D lateral em HTML5/Canvas, começando pelo Homem de Ferro numa arena de treino em Nova York.
+Protótipo 2D em HTML5 Canvas de combate com personagens Marvel, construído para navegador e hospedado no GitHub Pages.
 
-## Como executar
+## Executar
 
-Abra `index.html` em um navegador moderno. Para editar/testar pelo celular, você pode usar um ambiente de desenvolvimento HTML ou hospedar o repositório com GitHub Pages.
+Abra a versão publicada: https://jin27012007.github.io/Marvel-Assemble/
 
-## Oficina de sprites
+Para rodar localmente, sirva a pasta do projeto em um servidor HTTP simples e abra `index.html`. O projeto não usa bibliotecas externas: o motor está no HTML e os catálogos de personagem e habilidades são scripts locais.
 
-Para padronizar sprites de novos personagens sem mexer na jogabilidade, use a [Oficina de Sprites](assets/sprites/sprite-workbench.html) e siga o [guia de sprites](docs/SPRITE_PIPELINE.md). A oficina normaliza pose parada, caminhada e retrato para tamanhos consistentes. O jogo carrega os dados do catálogo externo `assets/sprites/character-catalog.js`; veja `docs/SPRITE_PIPELINE.md` para adicionar personagens sem mexer na lógica principal. O cadastro de cada personagem ainda é manual, pois o GitHub Pages não permite descobrir pastas automaticamente.
+## Estrutura atual
+
+- `index.html`: loop, física, câmera, UI, combate, teclado e controles por toque.
+- `assets/sprites/character-catalog.js`: personagens, atributos, caminhos de idle, caminhada, voo, pouso e habilidades.
+- `assets/skills/skill-catalog.js`: padrões globais opcionais de animações de habilidades.
+- `assets/sprites/ironman/`: idle, caminhada e retrato do Iron Man.
+- `assets/skills/`: animações de voo, pouso, repulsor simples e carregado.
 
 ## Controles
 
-- `A`/`D` ou setas esquerda/direita: mover
-- `Espaço` ou seta para cima: saltar
-- `J`: repulsor
-- `K`: rajada
-- `L`: míssil
-- `U`: sobrecarga
+- Analógico virtual: esquerda/direita move; cima/baixo troca de faixa ou altitude no voo.
+- Botão Repulsor: dois tiros leves em sequência e, no terceiro ciclo, disparo carregado.
+- Elevação de Ego: ativa/desativa voo.
+- Trava de Bombardeio: ativa seleção de alvos; toque nos drones para distribuir até cinco mísseis e pressione de novo para lançar.
+- Cruzado Tech: golpe em duas fases.
+- Teclado: A/D ou setas horizontais movem; F/J disparam repulsor; E alterna voo; I/O ou setas verticais mudam faixa; Espaço/W/Seta para cima atuam no eixo vertical conforme o estado de voo.
 
-O painel Modo Treino oferece invencibilidade, energia infinita, geração de drones, torres de teste, restauração de HP/energia e limpeza de inimigos.
+## Estado conhecido e limitações
 
-## Menu e catálogo de personagens
+Este é um protótipo, não um jogo completo. A partida e o treino usam uma arena de teste; o treino gera um alvo estacionário e opções de depuração. O projeto ainda não implementa multiplayer, partidas 6v6, equipes completas, campanha, balanceamento final nem suporte integral de todos os heróis.
 
-A tela inicial usa um carrossel horizontal rolável com Jogar, Treino e Configurações. Jogar e Treino abrem a mesma seleção de personagem; no Treino, o painel de opções fica recolhido e pode ser aberto por um botão. Configurações inclui controles na tela e tela cheia. O catálogo usa uma estrutura de dados por personagem e, nesta versão, inclui Iron Man e um modelo genérico de teste. Novos heróis precisam dos sprites e de uma entrada em `assets/sprites/character-catalog.js`.
-
-## Estado do projeto
-
-Esta é uma prova de conceito local, não a versão completa. Seleção de personagens, equipes 6v6, três torres por equipe, sprites finais e multiplayer ainda serão implementados.
+A auditoria de 31/10/2026 encontrou e corrigiu a escala/âncora da animação de repulsor, a sobreposição do efeito com a pose base de voo, a guarda de imagens ainda não carregadas, a ligação independente do botão de ajuda nas configurações e caminhos globais de três animações antigas que não existiam. A validação do GitHub Actions confirma o empacotamento e a publicação, não substitui teste visual em navegador Android.
