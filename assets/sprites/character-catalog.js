@@ -14,7 +14,10 @@ window.MARVEL_CHARACTER_CATALOG = [
     skills: {
       "Cruzado Tech": { pattern: "assets/skills/Cruzado Tech{frame}.png", frames: 6, fps: 10, loop: false },
       "Trava de Bombardeio": { pattern: "assets/skills/Trava de Bombardeio{frame}.png", frames: 6, fps: 10, loop: false },
-      "Repulsor": { pattern: "assets/skills/Repulsor{frame}.png", frames: 4, fps: 10, loop: false }
+      "Repulsor": { pattern: "assets/skills/Repulsor{frame}.png", frames: 4, fps: 10, loop: false },
+      "Repulsor tiro 1": { pattern: "assets/skills/Repulsor tiro 1 {frame}.png", frames: 2, fps: 12, loop: false },
+      "Repulsor tiro 2": { pattern: "assets/skills/Repulsor tiro 2 {frame}.png", frames: 2, fps: 12, loop: false },
+      "Repulsor carregado": { pattern: "assets/skills/Repulsor carregado{frame}.png", frames: 5, fps: 10, loop: false }
     }
   },
   { id: "generic", name: "MODELO GENÉRICO", subtitle: "MODELO BASE · TESTE", visual: "generic", available: true, maxHp: 300, maxEn: 180, animations: {}, skills: {} }
