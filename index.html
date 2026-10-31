@@ -226,8 +226,7 @@ function drawRepulsorAnimation(x,y,targetWidth,targetHeight,flip=false){
  const img=seq.frames[frame];if(!validImage(img))return false;
  // Estes PNGs mostram o personagem inteiro: substituir a pose base e manter a escala do herói.
  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
- drawSpriteFrame(img,0,0,iw,ih,x+targetWidth/2,y+targetHeight-8,targetHeight,flip);
- return true;
+ return drawSpriteFrame(img,0,0,iw,ih,x+targetWidth/2,y+targetHeight-8,targetHeight,flip);
 }
 function fireRepulsor(){
  if(repulsorCooldown>0)return;
