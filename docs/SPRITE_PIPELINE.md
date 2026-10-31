@@ -1,64 +1,39 @@
 # Pipeline de sprites — Marvel Assemble
 
-## Regra principal
-O motor não deve conhecer caminhos de arquivos de personagens. Toda arte é definida em `assets/sprites/character-catalog.js`. O personagem selecionado informa portrait, animações e habilidades. Para adicionar outro herói, crie sua pasta e inclua um objeto no catálogo; não edite `index.html`.
+## Carregamento ativo
 
-## Estrutura recomendada
+O jogo lê `assets/sprites/character-catalog.js` e `assets/skills/skill-catalog.js` antes do motor inline em `index.html`. O primeiro define os personagens; o segundo oferece configurações de habilidade compartilhadas. A configuração do personagem tem prioridade sobre a global.
 
-```text
-assets/sprites/
-  character-catalog.js
-  ironman/
-    portrait.png
-    idle.png
-    walk-4frames.png
-  spiderman/
-    portrait.png
-    idle.png
-    walk-6frames.png
+## Estrutura do Iron Man
 
-a assets/skills/                  # Pode ser usada por qualquer personagem
+```
+assets/sprites/ironman/
+  idle.png
+  walk-4frames.png
+  portrait.png
+assets/skills/
   Elevação de Ego - Salto1.png
-  Elevação de Ego1.png ...
+  Elevação de Ego1.png ... Elevação de Ego4.png
+  Elevação de Ego - Pouso1.png ... Pouso3.png
+  Repulsor tiro 1 1.png ... 2.png
+  Repulsor tiro 2 1.png ... 2.png
+  Repulsor carregado1.png ... 5.png
 ```
 
-## Contrato do catálogo
-Cada personagem tem `id`, `name`, `visual`, `portrait`, `maxHp`, `maxEn`, `animations` e `skills`. Exemplo:
+Os sprites de personagem usam imagem individual para idle/retrato e spritesheet horizontal para caminhada. Os efeitos de repulsor são PNGs separados numerados; cada arquivo de 360×360 funciona como um quadro-canvas individual, não como uma spritesheet horizontal recortável.
 
-```js
-{
-  id: "spiderman",
-  name: "SPIDER-MAN",
-  visual: "sprite",
-  portrait: "assets/sprites/spiderman/portrait.png",
-  maxHp: 280,
-  maxEn: 220,
-  animations: {
-    idle: { src: "assets/sprites/spiderman/idle.png", frames: 1, fps: 1, loop: true },
-    walk: { src: "assets/sprites/spiderman/walk-6frames.png", frames: 6, fps: 10, loop: true },
-    flight: { pattern: "assets/sprites/spiderman/flight{frame}.png", frames: 4, fps: 8, loop: true }
-  },
-  skills: {
-    "Teia": { pattern: "assets/sprites/spiderman/Teia{frame}.png", frames: 5, fps: 12, loop: false }
-  }
-}
-```
+## Contrato
 
-Para uma animação em arquivos separados use `pattern` com o marcador `{frame}` (começa em 1). Para uma spritesheet horizontal use `src` e informe `frames`; a largura total precisa ser divisível pelo número de quadros.
+Cada personagem pode declarar `id`, `name`, `visual`, `portrait`, atributos, `animations` e `skills`. Uma habilidade com arquivos separados usa `pattern` com o marcador `{frame}`, começando em 1. O carregador cria e mantém imagens em cache.
 
-## Regras para evitar leitura incorreta
-- PNG recomendado, com transparência real; não apague pixels de contorno automaticamente.
-- Em spritesheet horizontal, todos os quadros devem ter a mesma largura e altura e estar lado a lado, sem espaçadores externos.
-- O carregador valida imagem carregada, dimensões positivas e divisibilidade da largura pelo número de quadros. Arquivo ausente ou folha incompatível é ignorado e cai para arte genérica em vez de quebrar o jogo.
-- Use o mesmo tamanho de tela por quadro na mesma animação. Deixe margem transparente interna para evitar cortar mãos, pés ou efeitos.
-- Retrato é imagem individual, não spritesheet. Preferência por 128×128 px.
-- Idle pode ser imagem individual ou spritesheet de um quadro. Walk padrão tem quatro quadros, mas pode ter qualquer quantidade declarada no catálogo.
+## Regras de validação
 
-## Skins
-Uma skin é um conjunto alternativo de caminhos de arte no mesmo contrato. Uma skin não deve exigir lógica de combate nova. Ao adicionar skins, mantenha o mesmo conjunto de animações e proporções para que o motor continue independente da aparência.
+- Uma imagem só é desenhada depois que `complete` e dimensões naturais válidas são confirmadas.
+- Spritesheets horizontais devem ter largura divisível pela contagem `frames`.
+- PNGs de efeito 360×360 separados devem ser desenhados como uma imagem inteira. Não aplicar o corte de spritesheet a esses arquivos.
+- Arquivos de referência não cadastrados no catálogo não são carregados pelo jogo.
+- A existência de um arquivo no GitHub não garante que a pose esteja visualmente alinhada à mão, pé ou ponto de emissão; essa etapa exige comparação visual no navegador.
 
-## Habilidades
-As habilidades ficam em `skills` no objeto do personagem. O catálogo `assets/skills/skill-catalog.js` contém apenas padrões compartilhados. Arquivos numerados usam `{frame}` e começam em 1. Quando uma habilidade não possui sequência, o jogo mantém o efeito visual procedural.
+## Limites
 
-## Limites conhecidos
-O GitHub Pages não lista pastas automaticamente; o registro de personagens e nomes dos arquivos ainda é manual no catálogo. O carregador faz verificações estruturais, mas não consegue determinar sozinho se a arte está visualmente correta ou se um quadro tem o personagem cortado. Essa conferência ainda exige abrir o jogo ou inspecionar as imagens.
+O GitHub Pages não descobre automaticamente pastas. Personagens e caminhos são declarados manualmente. A renderização atual do personagem e as mecânicas ainda vivem em `index.html`; módulos auxiliares como `sprite-player.js` não são dependências ativas do jogo principal. A adição de novos personagens necessita de revisão dos comportamentos específicos que hoje dependem do Iron Man.
