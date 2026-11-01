@@ -92,6 +92,7 @@ html,body{touch-action:auto}
 function say(s){if(/Repulsor|Cruzado Tech|míssil|Míssil|alvo|Alvo|lâmina|Lâmina|porrete|Porrete|Trava de Bombardeio|Energia esgotada|voo encerrado|Elevação de Ego|Voo desativado|Voo ativado|Treino iniciado/i.test(s))return;let t=document.getElementById('toast');t.textContent=s;t.style.display='block';toastTimer=2.2}document.getElementById('inv').onclick=()=>{inv=!inv;document.getElementById('inv').textContent=inv?'ON':'OFF';document.getElementById('inv').classList.toggle('active',inv);say('Invencibilidade '+(inv?'ativada':'desativada'))};document.getElementById('inf').onclick=()=>{inf=!inf;document.getElementById('inf').textContent=inf?'ON':'OFF';document.getElementById('inf').classList.toggle('active',inf);say('Energia infinita '+(inf?'ativada':'desativada'))};document.getElementById('spawn').onclick=()=>{spawnOn=!spawnOn;let b=document.getElementById('spawn');b.textContent=spawnOn?'ON':'OFF';b.classList.toggle('active',spawnOn);say('Geração de drones '+(spawnOn?'ativada':'desativada'))};document.getElementById('droneAttack').onclick=()=>{trainingDroneAttack=!trainingDroneAttack;const b=document.getElementById('droneAttack');b.textContent=trainingDroneAttack?'ON':'OFF';b.classList.toggle('active',trainingDroneAttack);say('Ataques dos drones '+(trainingDroneAttack?'ativados':'desativados'))};document.getElementById('towers').onclick=()=>{towerOn=!towerOn;let b=document.getElementById('towers');b.textContent=towerOn?'ON':'OFF';b.classList.toggle('active',towerOn);if(towerOn&&!towers.length)towers=[{x:640,hp:800,max:800},{x:830,hp:800,max:800}];if(!towerOn)towers=[];say('Torres de teste '+(towerOn?'ativadas':'desativadas'))};document.getElementById('restore').onclick=()=>{player.hp=player.maxHp;player.en=player.maxEn;say('Armadura e energia restauradas')};document.getElementById('clear').onclick=()=>{enemies=[];bullets=[];say('Arena limpa')};
 const catalog=(window.MARVEL_CHARACTER_CATALOG||[]).map(ch=>({...ch,available:ch.available!==false}));
 let selectedCharacter=catalog[0],gameMode='menu',pendingMode='play',controlsVisible=true,trainingPanelOpen=false;
+let characterLoadRequest=0;
 function makeGenericFrame(frame=0){
  const cv=document.createElement('canvas');cv.width=90;cv.height=90;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
  const px=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
@@ -112,12 +113,12 @@ function validateStrip(img,frames){if(!validImage(img))return {ok:false,reason:'
 function loadImage(src,label){return new Promise(resolve=>{if(!src){resolve(null);return;}const img=new Image();img.onload=()=>resolve(validImage(img)?img:null);img.onerror=()=>{console.error('[Sprites] Falha ao carregar '+label+': '+src);resolve(null)};img.src=new URL(src,document.baseURI).href;});}
 async async function loadCharacter(character){
  if(!character||!character.id)throw new Error('Personagem inválido no catálogo.');
- const id=character.id;currentCharacterId=id;selectedCharacter=character;
+ const id=character.id,requestId=++characterLoadRequest;currentCharacterId=id;selectedCharacter=character;
  spriteAssets.idle=spriteAssets.walk=spriteAssets.portrait=null;idleSprite=null;idleLoaded=false;walkSheet=null;walkLoaded=false;walkFrame=0;walkClock=0;
  const portrait=document.querySelector('#hud .portrait img');
  if(character.visual==='sprite'){
   const [idle,walk,portraitImg]=await Promise.all([loadImage(character.animations?.idle?.src||character.idle,'idle'),loadImage(character.animations?.walk?.src||character.walk,'walk'),loadImage(character.portrait,'portrait')]);
-  if(currentCharacterId!==id)return;
+  if(requestId!==characterLoadRequest)return;
   const cfg=character.animations?.walk||{frames:4,fps:8},check=walk?validateStrip(walk,cfg.frames||4):{ok:false,reason:'arquivo ausente'};
   if(idle){spriteAssets.idle=idle;idleSprite=idle;idleLoaded=true;}else{console.error('[Sprites '+id+'] idle obrigatório indisponível.');throw new Error('Não foi possível carregar o sprite parado do '+(character.name||id)+'.');}
   if(check.ok){spriteAssets.walk=walk;walkSheet=walk;walkLoaded=true;player.walkFrameWidth=check.frameWidth;player.walkFrameHeight=check.frameHeight;}else console.warn('[Sprites '+id+'] walk ignorado: '+check.reason);
@@ -128,7 +129,7 @@ async async function loadCharacter(character){
  if(!idleLoaded&&!walkLoaded)throw new Error('Nenhum sprite válido foi carregado para '+(character.name||id)+'.');
  if(id==='ironman'){
   const checks=await Promise.all(['Repulsor tiro 1','Repulsor tiro 2','Repulsor carregado'].map(preloadSkillSpriteSequence));
-  if(currentCharacterId!==id)return;
+  if(requestId!==characterLoadRequest)return;
   const failed=checks.filter(x=>!x.ok);
   if(failed.length){const details=failed.map(x=>x.name+': '+x.failed.join(', ')).join('\n');console.error('[Repulsor] Pré-carregamento incompleto:',details);throw new Error('Falha ao carregar sprites do repulsor. Confira os caminhos dos quadros:\n'+details);}
  }
