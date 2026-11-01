@@ -130,7 +130,11 @@ async function loadCharacter(character){
   const checks=await Promise.all(['Repulsor tiro 1','Repulsor tiro 2','Repulsor carregado'].map(preloadSkillSpriteSequence));
   if(requestId!==characterLoadRequest)return;
   const failed=checks.filter(x=>!x.ok);
-  if(failed.length){const details=failed.map(x=>x.name+': '+x.failed.join(', ')).join('\n');console.error('[Repulsor] Pré-carregamento incompleto:',details);say('Sprites do repulsor indisponíveis. Consulte o console para ver os arquivos.');}
+  if(failed.length){
+   const details=failed.map(x=>x.name+': '+x.failed.join(', ')).join('\n');
+   console.error('[Repulsor] Pré-carregamento incompleto:',details);
+   throw new Error('Não foi possível carregar todos os sprites do repulsor. Verifique os arquivos indicados no console e tente novamente.');
+  }
  }
  document.querySelector('#hud .name').textContent=character.name||id.toUpperCase();player.maxHp=character.maxHp||300;player.hp=player.maxHp;player.maxEn=character.maxEn||200;player.en=player.maxEn;document.getElementById('level').textContent='NÍVEL 1 · '+(gameMode==='training'?'TREINO':'PARTIDA');
 }
@@ -229,9 +233,13 @@ function waitImage(img){
  if(validImage(img))return Promise.resolve(true);
  if(img.complete)return Promise.resolve(false);
  return new Promise(resolve=>{
-  const done=()=>resolve(validImage(img));
-  img.addEventListener('load',done,{once:true});
-  img.addEventListener('error',()=>resolve(false),{once:true});
+  let settled=false;
+  const finish=()=>{if(settled)return;settled=true;cleanup();resolve(validImage(img));};
+  const cleanup=()=>{img.removeEventListener('load',finish);img.removeEventListener('error',finish);};
+  img.addEventListener('load',finish,{once:true});
+  img.addEventListener('error',finish,{once:true});
+  // Fecha a janela de corrida caso o navegador complete o download ao registrar os listeners.
+  if(img.complete)finish();
  });
 }
 async function preloadSkillSpriteSequence(name){
