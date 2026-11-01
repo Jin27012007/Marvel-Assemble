@@ -93,6 +93,7 @@ function say(s){const t=document.getElementById('toast');if(!t)return;t.textCont
 const catalog=(window.MARVEL_CHARACTER_CATALOG||[]).map(ch=>({...ch,available:ch.available!==false}));
 let selectedCharacter=catalog[0],gameMode='menu',pendingMode='play',controlsVisible=true,trainingPanelOpen=false;
 let characterLoadRequest=0;
+let characterLoadRequest=0;
 function makeGenericFrame(frame=0){
  const cv=document.createElement('canvas');cv.width=90;cv.height=90;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
  const px=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
@@ -108,7 +109,7 @@ function makeGenericFrame(frame=0){
 function genericPortrait(){const cv=document.createElement('canvas');cv.width=128;cv.height=128;const g=cv.getContext('2d');g.fillStyle='#152641';g.fillRect(0,0,128,128);g.fillStyle='#d3e0ed';g.fillRect(40,20,48,45);g.fillStyle='#3b86b8';g.fillRect(34,65,60,45);g.fillStyle='#8de8ff';g.fillRect(51,35,26,12);return cv.toDataURL('image/png')}
 const spriteAssets={idle:null,walk:null,portrait:null};
 function validImage(img){if(!img)return false;const isCanvas=typeof img.getContext==='function'&&img.width>0&&img.height>0;if(isCanvas)return true;return !!img.complete&&img.naturalWidth>0&&img.naturalHeight>0;}
-function validateStrip(img,frames){if(!validImage(img))return {ok:false,reason:'imagem indisponível'};if(!Number.isInteger(frames)||frames<1||img.naturalWidth%frames!==0)return {ok:false,reason:'largura incompatível com '+frames+' quadros'};const fw=img.naturalWidth/frames,fh=img.naturalHeight;if(fw<8||fh<8)return {ok:false,reason:'quadro pequeno demais'};return {ok:true,frameWidth:fw,frameHeight:fh};}
+function validateStrip(img,frames){if(!validImage(img))return {ok:false,reason:'imagem indisponível'};if(!Number.isInteger(frames)||frames<1)return {ok:false,reason:'quantidade de quadros inválida'};const width=img.naturalWidth||img.width,height=img.naturalHeight||img.height;if(width<frames*8||height<8)return {ok:false,reason:'quadro pequeno demais'};const fw=width/frames;if(!Number.isInteger(fw))return {ok:false,reason:'quadros não têm largura uniforme'};return {ok:true,frameWidth:fw,frameHeight:height};}
 function loadImage(src,label){return new Promise(resolve=>{if(!src){resolve(null);return;}const img=new Image();img.onload=()=>resolve(validImage(img)?img:null);img.onerror=()=>{console.error('[Sprites] Falha ao carregar '+label+': '+src);resolve(null)};img.src=new URL(src,document.baseURI).href;});}
 async function loadCharacter(character){
  if(!character||!character.id)throw new Error('Personagem inválido no catálogo.');
@@ -199,15 +200,8 @@ function drawIron(x,y){
  let sx=0,sw=sprite.naturalWidth||sprite.width,sh=sprite.naturalHeight||sprite.height;
  if(moving){
   const cfg=selectedCharacter?.animations?.walk||{},count=Math.max(1,cfg.frames||4),check=validateStrip(sprite,count);
-  if(check.ok){
-   walkClock+=1/60;
-   if(walkClock>=1/Math.max(1,cfg.fps||8)){walkClock=0;walkFrame=(walkFrame+1)%count;}
-   sw=check.frameWidth;sh=check.frameHeight;sx=walkFrame*sw;
-  }else{
-   console.warn('[Sprites '+(selectedCharacter?.id||'unknown')+'] walk ignorado: '+check.reason+'; usando idle.');
-   walkLoaded=false;sprite=idleSprite;
-   if(validImage(sprite)){sw=sprite.naturalWidth||sprite.width;sh=sprite.naturalHeight||sprite.height;sx=0;}else{drawFallback();return;}
-  }
+  if(check.ok){walkClock+=1/60;if(walkClock>=1/Math.max(1,cfg.fps||8)){walkClock=0;walkFrame=(walkFrame+1)%count;}sw=check.frameWidth;sh=check.frameHeight;sx=walkFrame*sw;}
+  else{console.warn('[Sprites '+(selectedCharacter?.id||'unknown')+'] walk ignorado: '+check.reason+'; usando idle.');walkLoaded=false;sprite=idleSprite;if(validImage(sprite)){sw=sprite.naturalWidth||sprite.width;sh=sprite.naturalHeight||sprite.height;sx=0;}else{drawFallback();return;}}
  }else{walkFrame=0;walkClock=0;}
  drawSpriteFrame(sprite,sx,0,sw,sh,x+player.w/2,y+player.h+8,player.h+16,player.face<0);
 }
