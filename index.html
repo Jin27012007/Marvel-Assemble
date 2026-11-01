@@ -130,7 +130,7 @@ async function loadCharacter(character){
   const checks=await Promise.all(['Repulsor tiro 1','Repulsor tiro 2','Repulsor carregado'].map(preloadSkillSpriteSequence));
   if(requestId!==characterLoadRequest)return;
   const failed=checks.filter(x=>!x.ok);
-  if(failed.length){const details=failed.map(x=>x.name+': '+x.failed.join(', ')).join('\n');console.error('[Repulsor] Pré-carregamento incompleto:',details);throw new Error('Falha ao carregar sprites do repulsor. Confira os caminhos dos quadros:\n'+details);}
+  if(failed.length){const details=failed.map(x=>x.name+': '+x.failed.join(', ')).join('\n');console.error('[Repulsor] Pré-carregamento incompleto:',details);say('Sprites do repulsor indisponíveis. Consulte o console para ver os arquivos.');}
  }
  document.querySelector('#hud .name').textContent=character.name||id.toUpperCase();player.maxHp=character.maxHp||300;player.hp=player.maxHp;player.maxEn=character.maxEn||200;player.en=player.maxEn;document.getElementById('level').textContent='NÍVEL 1 · '+(gameMode==='training'?'TREINO':'PARTIDA');
 }
