@@ -264,7 +264,7 @@ function drawSkillSprite(name,frameIndex,anchorX,anchorBottom,targetHeight,flip=
  const config=seq.config,index=Math.max(0,Math.min(seq.frames.length-1,Math.floor(frameIndex))),img=seq.frames[index];
  if(!validImage(img))return false;
  if(config.pattern||config.src)return drawSpriteFrame(img,0,0,img.naturalWidth||0,img.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);
- if(seq.frames.length>1){const check=validateStrip(img,config.frames);if(!check.ok)return false;return drawSpriteFrame(img,index*check.frameWidth,0,check.frameWidth,check.frameHeight,anchorX,anchorBottom,targetHeight,flip);}
+ if(seq.frames.length>1){const check=validateStrip(img,config.frames);if(!check.ok){console.error('[Skills '+name+'] spritesheet inválida: '+check.reason);return false;}return drawSpriteFrame(img,index*check.frameWidth,0,check.frameWidth,check.frameHeight,anchorX,anchorBottom,targetHeight,flip);}
  return drawSpriteFrame(img,0,0,img.naturalWidth||0,img.naturalHeight||0,anchorX,anchorBottom,targetHeight,flip);
 }
 function skillSpriteFrame(name,elapsedSeconds){const seq=getSkillSpriteSequence(name);if(!seq)return 0;const raw=Math.floor(Math.max(0,elapsedSeconds)*(seq.config.fps||8));return seq.config.loop?raw%seq.frames.length:Math.min(seq.frames.length-1,raw);}
